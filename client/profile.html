@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunflower Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bank-blue': '#0076a3', // Deep Cyan/Teal
+                        'bank-yellow': '#ffc42a', // Vibrant Sunflower Yellow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Ensures the background image and its overlay are consistent with the login page design */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        /* Style for the custom alert/modal */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ffc42a;
+            max-width: 90%;
+            text-align: center;
+        }
+        .message-box button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #0076a3;
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.15s;
+        }
+        .message-box button:hover {
+            background-color: #005f82;
+        }
+
+        /* Sidebar Custom Styles */
+        .sidebar {
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Backdrop to close sidebar on click */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-out;
+        }
+        .sidebar-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Fixed header background and content padding adjustment */
+        .main-content-wrapper {
+            padding-top: 4rem; 
+        }
+        .header-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 160px;
+            background-color: #0076a3;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    
+    <div id="message-box-container" class="hidden"></div>
+    
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar" class="sidebar bg-white p-4 shadow-xl flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center pb-6 border-b border-gray-100">
+                <div class="flex items-center text-xl font-bold text-bank-blue">
+                    <img src="https://placehold.co/30x30/0076a3/ffffff?text=SB" alt="Logo" class="mr-2">
+                    Menu
+                </div>
+                <button id="close-sidebar-button" class="text-gray-500" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <ul class="pt-4 space-y-2">
+                <li>
+                    <a href="user-dashboard.html" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="profile.html" class="flex items-center p-3 text-sm font-semibold text-bank-blue bg-bank-yellow/30 rounded-lg transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/settings.html" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.827 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.827-3.31 2.37-2.37h.003z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <button id="sidebar-logout-button" class="flex items-center p-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition duration-150 mt-auto" onclick="handleLogout()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Log Out
+        </button>
+    </nav>
+    
+    <div class="banking-bg header-background"></div>
+
+    <div class="relative z-10 p-4 md:p-8 max-w-7xl mx-auto main-content-wrapper">
+        
+        <header class="flex justify-between items-center mb-8 pt-2">
+            <div class="flex items-center space-x-4">
+                <button id="menu-button" class="text-white cursor-pointer" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+                <div id="greeting-text" class="text-xl md:text-3xl font-semibold text-white mt-1">
+                    Your Profile
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button id="logout-button-header" class="text-xs text-white/80 hover:text-white font-medium transition duration-150 p-1 rounded-md" onclick="handleLogout()">
+                    Log Out
+                </button>
+                <div id="user-avatar-header" class="w-10 h-10 rounded-full bg-bank-yellow flex items-center justify-center text-white font-bold text-lg overflow-hidden border-2 border-white shadow-md">
+                    <img id="avatar-img" src="https://placehold.co/40x40/ffc42a/0076a3?text=SB" alt="User Avatar" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+        
+        <main class="max-w-4xl mx-auto">
+            <div class="bg-white p-5 md:p-8 rounded-xl shadow-2xl border border-gray-100">
+                
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-bank-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Personal Details
+                    </h2>
+                    <button id="edit-profile-btn" class="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium rounded-lg text-bank-blue border border-bank-blue hover:bg-bank-blue hover:text-white transition duration-200 shadow-md">
+                        Edit Profile
+                    </button>
+                </div>
+
+                <form id="profile-form" class="space-y-6" onsubmit="event.preventDefault(); handleSaveProfile();">
+                    
+                    <div class="flex flex-col items-center border-b pb-6">
+                        <div class="w-24 h-24 rounded-full bg-bank-yellow flex items-center justify-center text-white font-extrabold text-3xl overflow-hidden border-4 border-bank-blue shadow-lg mb-4">
+                            <img id="main-avatar-img" src="https://placehold.co/96x96/ffc42a/0076a3?text=SB" alt="User Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <h3 id="profile-full-name" class="text-xl font-bold text-gray-900">Loading Name...</h3>
+                        <p id="profile-email" class="text-sm text-gray-500">Loading Email...</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" readonly class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue/50 disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-600 p-3 transition duration-150">
+                        </div>
+                        
+                        <div>
+                            <label for="dob" class="block text-sm font-medium text-gray-700">Date of Birth</label>
+                            <input type="date" id="dob" name="dob" readonly class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue/50 disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-600 p-3 transition duration-150">
+                        </div>
+                        
+                        <div>
+                            <label for="occupation" class="block text-sm font-medium text-gray-700">Occupation</label>
+                            <input type="text" id="occupation" name="occupation" readonly class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue/50 disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-600 p-3 transition duration-150">
+                        </div>
+                        
+                        <div>
+                            <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
+                            <select id="gender" name="gender" disabled class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue/50 disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-600 p-3 transition duration-150">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                                <option value="Prefer Not to Say">Prefer Not to Say</option>
+                            </select>
+                        </div>
+                        
+                        <div class="md:col-span-2">
+                            <label for="addressLine1" class="block text-sm font-medium text-gray-700">Address Line 1</label>
+                            <input type="text" id="addressLine1" name="addressLine1" readonly class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue/50 disabled:bg-gray-50 disabled:border-gray-200 disabled:text-gray-600 p-3 transition duration-150">
+                        </div>
+                        
+
+                    </div>
+                    
+                    <div id="edit-actions" class="flex justify-end space-x-4 pt-4 border-t hidden">
+                        <button type="button" onclick="cancelEdit()" class="px-4 py-2 text-sm font-medium rounded-lg text-gray-700 border border-gray-300 hover:bg-gray-50 transition duration-200">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 text-sm font-medium rounded-lg text-white bg-bank-blue hover:bg-bank-blue/80 transition duration-200 shadow-lg">
+                            Save Changes
+                        </button>
+                    </div>
+
+                </form>
+
+                <div class="mt-8 pt-6 border-t border-gray-100">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-bank-yellow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-7-9a1 1 0 000 2h14a1 1 0 100-2H3z" clip-rule="evenodd" /></svg>
+                        Account Status
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-medium text-gray-500">User Identifier</p>
+                            <p id="display-userIdName" class="font-bold text-bank-blue truncate">N/A</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-medium text-gray-500">Account Status</p>
+                            <p id="display-status" class="font-bold text-gray-800 capitalize">N/A</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <p class="font-medium text-gray-500">Primary Currency</p>
+                            <p id="display-currency" class="font-bold text-gray-800">N/A</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+        </main>
+
+    </div>
+
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-bank-blue text-white p-1 rounded">
+                    <p class="font-bold">Sunflower First National</p><span class="text-xs ml-1">.gfx</span>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <p>Routing Number: 101130607</p>
+                <p>Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const API_BASE_URL = '/api'; 
+        let isEditing = false;
+        let originalProfileData = {}; // To store data before editing
+
+        // --- Sidebar Logic ---
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('open');
+            backdrop.classList.toggle('open');
+            
+            const menuButton = document.getElementById('menu-button');
+            const isOpen = sidebar.classList.contains('open');
+            menuButton.setAttribute('aria-expanded', isOpen);
+        }
+
+        // Custom message box function to replace alert()
+        function showMessage(message, title = 'Notification', type = 'info') {
+            const container = document.getElementById('message-box-container');
+            let borderColor = '#ffc42a'; // bank-yellow default
+            if (type === 'error') borderColor = '#dc2626'; // red-600
+            if (type === 'success') borderColor = '#10b981'; // emerald-500
+
+            container.innerHTML = `
+                <div class="message-box" style="border-color: ${borderColor};">
+                    <h3 class="text-xl font-bold mb-2 text-bank-blue">${title}</h3>
+                    <p class="text-gray-700">${message}</p>
+                    <button onclick="closeMessage()">Close</button>
+                </div>
+                <div class="fixed inset-0 bg-black/50" onclick="closeMessage()"></div>
+            `;
+            container.classList.remove('hidden');
+        }
+
+        function closeMessage() {
+            document.getElementById('message-box-container').classList.add('hidden');
+        }
+        
+        // --- LOGOUT FUNCTION ---
+        function handleLogout() {
+            sessionStorage.removeItem('userToken'); // Clear the token
+            sessionStorage.removeItem('currentUserId'); // Clear the user ID
+            showMessage('You have been logged out.', 'Success', 'success');
+            setTimeout(() => {
+                // Redirect to the login page (index.html is one level up)
+                window.location.href = '../index.html'; 
+            }, 500);
+        }
+        
+        // --- Profile Management Functions ---
+        function toggleEditMode(enable) {
+            isEditing = enable;
+            const formElements = document.getElementById('profile-form').elements;
+            const editButton = document.getElementById('edit-profile-btn');
+            const editActions = document.getElementById('edit-actions');
+
+            for (let i = 0; i < formElements.length; i++) {
+                const element = formElements[i];
+                // Disable read-only mode for all editable fields except button/submit types
+                if (element.tagName !== 'BUTTON' && element.type !== 'submit') { 
+                    element.readOnly = !enable;
+                    element.disabled = !enable;
+                }
+            }
+
+            if (enable) {
+                editButton.classList.add('hidden');
+                editActions.classList.remove('hidden');
+            } else {
+                editButton.classList.remove('hidden');
+                editActions.classList.add('hidden');
+            }
+        }
+        
+        function cancelEdit() {
+            // Restore original data to the form fields
+            populateForm(originalProfileData); 
+            toggleEditMode(false);
+            showMessage('Editing cancelled. Profile data restored.', 'Notification');
+        }
+        
+        // --- Data Population ---
+        function populateForm(data) {
+            if (!data) return;
+
+            // --- Header and Avatar updates ---
+            const initials = data.fullName ? data.fullName.split(' ').map(n => n[0]).join('') : 'SB';
+            const avatarUrl = data.profilePicturePath 
+                ? data.profilePicturePath 
+                : `https://placehold.co/96x96/ffc42a/0076a3?text=${initials}`;
+                
+            document.getElementById('greeting-text').textContent = data.greetingName ? `Hi, ${data.greetingName}` : 'Your Profile';
+            document.getElementById('avatar-img').src = avatarUrl;
+            document.getElementById('main-avatar-img').src = avatarUrl;
+            
+            document.getElementById('profile-full-name').textContent = data.fullName || 'User Name';
+            document.getElementById('profile-email').textContent = data.email || 'user@email.com';
+            
+            // --- Form field updates (Editable fields) ---
+            document.getElementById('fullName').value = data.fullName || '';
+            document.getElementById('addressLine1').value = data.addressLine1 || '';
+           
+            // New fields
+            document.getElementById('dob').value = data.dob || ''; 
+            document.getElementById('occupation').value = data.occupation || '';
+            document.getElementById('gender').value = data.gender || '';
+
+
+            // --- Read-Only Display fields (New Section) ---
+            document.getElementById('display-userIdName').textContent = data.userIdName || 'N/A';
+            document.getElementById('display-status').textContent = data.status || 'N/A';
+            document.getElementById('display-currency').textContent = data.currency || 'USD'; 
+            
+            // Handle color for status
+            const statusElement = document.getElementById('display-status');
+            if (data.status) {
+                statusElement.className = 'font-bold capitalize'; // Reset classes
+                const statusLower = data.status.toLowerCase();
+                if (statusLower === 'active') {
+                    statusElement.classList.add('text-emerald-600');
+                } else if (statusLower === 'pending') {
+                    // Corrected to use defined color/a suitable alternative
+                    statusElement.classList.add('text-bank-yellow'); 
+                } else if (statusLower === 'suspended') {
+                    statusElement.classList.add('text-red-600');
+                } else {
+                    statusElement.classList.add('text-gray-800');
+                }
+            }
+        }
+
+        // --- Save Handler (Mocked Update) ---
+        async function handleSaveProfile() {
+            if (isEditing) {
+                // Collect all editable form data
+                const formData = {
+                    fullName: document.getElementById('fullName').value,
+                    addressLine1: document.getElementById('addressLine1').value,
+                    dob: document.getElementById('dob').value,
+                    occupation: document.getElementById('occupation').value,
+                    gender: document.getElementById('gender').value,
+                };
+                
+                showMessage('Attempting to save profile changes...', 'Saving...');
+
+                // Mock delay to simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+                // --- CRITICAL UPDATE: Update the originalProfileData with form data (Mock Success) ---
+                originalProfileData = { 
+                    ...originalProfileData, 
+                    ...formData,
+                    // Re-calculate derived fields that the server would normally update/confirm
+                    greetingName: formData.fullName.split(' ')[0] || originalProfileData.greetingName // Simple mock update
+                }; 
+                
+                // Re-populate the form and display fields with the new data
+                populateForm(originalProfileData);
+                
+                toggleEditMode(false);
+
+                // Simulate successful save
+                showMessage('Profile successfully updated (Mock Save)!', 'Success', 'success');
+            }
+        }
+
+
+        // --- CORE FETCH FUNCTION ---
+        async function fetchUserProfile() {
+            // 1. Check for token
+            const token = sessionStorage.getItem('userToken');
+            if (!token) {
+                showMessage('Session expired or no token found. Redirecting to login.', 'Authentication Required', 'error');
+                setTimeout(() => {
+                    window.location.href = '../index.html'; // Redirect to login
+                }, 1500);
+                return;
+            }
+
+            try {
+                // 2. Fetch data from the protected API
+                const response = await fetch(`${API_BASE_URL}/client/profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({ message: 'Server responded with an error status.' }));
+                    
+                    if (response.status === 401 || response.status === 403) {
+                        showMessage('Access denied. Authentication failed. Redirecting to login.', 'Access Denied', 'error');
+                        handleLogout(); 
+                        return;
+                    }
+                    throw new Error(error.message || 'Failed to fetch profile data.');
+                }
+
+                const { data } = await response.json();
+                console.log('Profile Data Received:', data);
+
+                // 3. Store data and populate the view
+                originalProfileData = data;
+                populateForm(data);
+
+            } catch (error) {
+                console.error('Profile Load Error:', error);
+                showMessage(`Could not load profile data. Please check the server status. Error: ${error.message}`, 'Connection Error', 'error');
+            }
+        }
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initial load of profile data
+            fetchUserProfile();
+            
+            // Add listeners for the edit button
+            document.getElementById('edit-profile-btn').addEventListener('click', () => {
+                toggleEditMode(true);
+            });
+            
+            // Add listener for header logout button (sidebar logout is inline)
+            document.getElementById('logout-button-header').addEventListener('click', handleLogout);
+        });
+    </script>
+</body>
+</html>

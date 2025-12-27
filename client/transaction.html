@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunflower</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bank-blue': '#0076a3', // Deep Cyan/Teal
+                        'bank-yellow': '#ffc42a', // Vibrant Sunflower Yellow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Shared Styles for Banking Theme */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        /* Style for the custom alert/modal */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; 
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ffc42a;
+            max-width: 90%;
+            text-align: center;
+        }
+        .message-box button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #0076a3;
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.15s;
+        }
+        .message-box button:hover {
+            background-color: #005f82;
+        }
+
+        /* Sidebar Custom Styles */
+        .sidebar {
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 50; 
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Backdrop to close sidebar on click */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-out;
+        }
+        .sidebar-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .main-content-wrapper {
+            padding-top: 4rem; 
+        }
+        .header-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 160px; /* Define the height of the blue header area */
+            background-color: #0076a3; /* Ensure it's blue if image fails */
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    
+    <div id="message-box-container" class="hidden"></div>
+    
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar" class="sidebar bg-white p-4 shadow-xl flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center pb-6 border-b border-gray-100">
+                <div class="flex items-center text-xl font-bold text-bank-blue">
+                    <img src="https://placehold.co/30x30/0076a3/ffffff?text=SB" alt="Logo" class="mr-2">
+                    Menu
+                </div>
+                <button id="close-sidebar-button" class="text-gray-500" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <ul class="pt-4 space-y-2">
+                <li>
+                    <a href="user-dashboard.html" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="pl-2 border-l-4 border-bank-yellow">
+                    <a href="transactions.html" class="flex items-center p-3 text-sm font-semibold text-bank-blue bg-bank-yellow/30 rounded-r-lg transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+                        All Transactions
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/profile.html" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/settings.html" class="flex items-center p-3 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.827 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.827-3.31 2.37-2.37h.003z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <button id="sidebar-logout-button" class="flex items-center p-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition duration-150 mt-auto" onclick="handleLogout()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Log Out
+        </button>
+    </nav>
+    
+    <div class="banking-bg header-background"></div>
+
+    <div class="relative z-10 p-4 md:p-8 max-w-7xl mx-auto main-content-wrapper">
+
+        <header class="flex justify-between items-center mb-8 pt-2">
+            <div class="flex items-center space-x-4">
+                <button id="menu-button" class="text-white cursor-pointer" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+                <div id="greeting-text" class="text-xl md:text-3xl font-semibold text-white mt-1">
+                    All Transactions
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button id="logout-button" class="text-xs text-white/80 hover:text-white font-medium transition duration-150 p-1 rounded-md" onclick="handleLogout()">
+                    Log Out
+                </button>
+                <div id="user-avatar" class="w-10 h-10 rounded-full bg-bank-yellow flex items-center justify-center text-white font-bold text-lg overflow-hidden border-2 border-white shadow-md">
+                    <img id="avatar-img" src="https://placehold.co/40x40/ffc42a/0076a3?text=SB" alt="User Avatar" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+        
+        <main class="grid grid-cols-1 gap-6">
+            
+            <div class="bg-white p-5 md:p-6 rounded-xl shadow-lg border border-gray-50">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
+                    <h2 class="text-2xl font-bold text-bank-blue mb-2 sm:mb-0">Transaction History</h2>
+                    <a href="user-dashboard.html" class="flex items-center text-sm font-medium text-gray-600 hover:text-bank-blue transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                        Back to Dashboard
+                    </a>
+                </div>
+
+                <div id="transactions-list" class="space-y-4 text-sm">
+                    <p class="text-center text-gray-500">Loading all transactions...</p>
+                    </div>
+
+                <div id="transaction-count" class="text-center mt-6 text-gray-500 text-sm">
+                    </div>
+            </div>
+        </main>
+
+    </div>
+
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-bank-blue text-white p-1 rounded">
+                    <p class="font-bold">Sunflower First National</p><span class="text-xs ml-1">.gfx</span>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <p>Routing Number: 101130607</p>
+                <p>Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+<script>
+    const API_BASE_URL = '/api'; 
+    const SESSION_KEY_TOKEN = 'userToken'; 
+    const LOGIN_PAGE_URL = '../index.html'; 
+    
+    // --- UI Utility Functions (Copied from dashboard) ---
+
+    function showMessage(message, title = 'Notification') {
+        const container = document.getElementById('message-box-container');
+        container.innerHTML = `
+            <div class="message-box">
+                <h3 class="text-xl font-bold mb-2 text-bank-blue">${title}</h3>
+                <p class="text-gray-700">${message}</p>
+                <button onclick="closeMessage()">Close</button>
+            </div>
+            <div class="fixed inset-0 bg-black/50" onclick="closeMessage()"></div>
+        `;
+        container.classList.remove('hidden');
+    }
+
+    function closeMessage() {
+        document.getElementById('message-box-container').classList.add('hidden');
+    }
+
+    const formatCurrency = (amount, currencyCode = 'USD') => {
+        const numberAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        if (isNaN(numberAmount)) return '$0.00';
+        
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: currencyCode,
+        }).format(Math.abs(numberAmount));
+    };
+
+    /**
+     * Helper function to return the Tailwind CSS classes and text for the transaction status badge.
+     * **NEWLY ADDED/UPDATED**
+     * @param {string} status - The transaction status (e.g., 'Successful', 'Failed').
+     */
+    function getTransactionStatusBadge(status) {
+        let text = (status || 'Unknown').toUpperCase();
+        let classes = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0';
+
+        switch (text) {
+            case 'SUCCESSFUL':
+            case 'APPROVED':
+                classes += ' bg-green-100 text-green-800';
+                break;
+            case 'FAILED':
+            case 'REJECTED':
+            case 'DECLINED':
+                classes += ' bg-red-100 text-red-800';
+                break;
+            case 'PROCESSING':
+            case 'PENDING':
+                classes += ' bg-yellow-100 text-yellow-800';
+                break;
+            case 'REFUNDED':
+                classes += ' bg-bank-blue/20 text-bank-blue';
+                break;
+            default:
+                classes += ' bg-gray-100 text-gray-800';
+                break;
+        }
+        return `<span class="${classes}">${text}</span>`;
+    }
+
+    // --- Authentication Check ---
+    function checkAuthentication() {
+        const token = sessionStorage.getItem(SESSION_KEY_TOKEN);
+        if (!token) {
+            showMessage('Session expired or no token found. Redirecting to login.', 'Authentication Required');
+            setTimeout(() => {
+                window.location.href = LOGIN_PAGE_URL; 
+            }, 1500);
+            return false;
+        }
+        return token;
+    }
+
+    // *** MODIFICATION START: Pre-fetch Authentication Check ***
+    const initialToken = checkAuthentication();
+    if (!initialToken) {
+        // Stop execution if not authenticated
+    }
+    // *** MODIFICATION END ***
+    
+    // --- Sidebar Logic ---
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        sidebar.classList.toggle('open');
+        backdrop.classList.toggle('open');
+        
+        const menuButton = document.getElementById('menu-button');
+        const isOpen = sidebar.classList.contains('open');
+        menuButton.setAttribute('aria-expanded', isOpen);
+    }
+    
+    /**
+     * Converts a transaction object into the HTML string for display.
+     * **UPDATED to include the status badge.**
+     */
+    const createTransactionItem = (tx) => {
+        if (tx.amount === undefined || tx.description === undefined) {
+            console.error("Missing critical transaction field:", tx);
+            return '';
+        }
+        
+        // --- Determine Transaction Direction (Credit/Debit) ---
+        let isDebit;
+        let amountValue;
+
+        if (tx.source === 'local') { // Used for mobile deposits and other custom local storage data
+            isDebit = tx.type.toLowerCase() === 'debit';
+            amountValue = tx.amount;
+        } else { // Used for API data which relies on the sign of the amount
+            isDebit = tx.amount < 0;
+            amountValue = Math.abs(tx.amount);
+        }
+
+        // Apply visual classes
+        const iconBgClass = isDebit ? 'bg-bank-blue' : 'bg-bank-yellow';
+        const iconTextColor = isDebit ? 'text-white' : 'text-gray-800';
+        const amountColorClass = isDebit ? 'text-red-600' : 'text-green-600';
+        
+        // Highlight NEW Mobile Deposits (only for local storage entries)
+        let rowClasses = 'flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 last:border-b-0 last:pb-0 hover:bg-gray-50 p-2 -mx-2 rounded-lg transition duration-100';
+
+        if (tx.source === 'local' && tx.description.includes('Mobile Check Deposit')) {
+            rowClasses += ' bg-yellow-50 border-l-4 border-bank-yellow shadow-md'; 
+        }
+
+        const iconSvg = isDebit 
+            ? '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" /></svg>';
+        
+        const txDate = tx.date ? new Date(tx.date).toLocaleDateString() : 'N/A';
+        const formattedAmount = formatCurrency(amountValue, 'USD'); 
+        
+        // NEW: Get the status badge HTML
+        const statusBadgeHtml = getTransactionStatusBadge(tx.status || 'Successful'); 
+
+        return `
+            <div class="${rowClasses}">
+                <div class="flex items-start space-x-3 w-full sm:w-1/2">
+                    <div class="w-10 h-10 rounded-full ${iconBgClass} flex items-center justify-center font-bold text-sm ${iconTextColor} flex-shrink-0 shadow-md mt-1">
+                        ${iconSvg}
+                    </div>
+                    <div class="min-w-0 flex-grow">
+                        <p class="font-medium text-gray-800 whitespace-normal">${tx.description}</p>
+                        <div class="flex items-center space-x-2 text-xs">
+                            ${statusBadgeHtml}
+                            <p class="text-gray-500">${txDate} / ${tx.accountType || tx.account || 'N/A'}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="font-semibold ${amountColorClass} text-left sm:text-right mt-2 sm:mt-0 w-full sm:w-auto text-base">
+                    ${isDebit ? '-' : '+'}${formattedAmount}
+                </p>
+            </div>
+        `;
+    };
+    
+    // --- LOGOUT FUNCTION ---
+    function handleLogout() {
+       sessionStorage.removeItem('userToken');
+       sessionStorage.removeItem('currentUserId');
+       // Don't show success message before redirecting, as checkAuthentication already shows a message on next load
+       window.location.href = LOGIN_PAGE_URL; 
+    }
+    
+    // --- New Function: Fetch Local Storage Transactions ---
+    function getLocalTransactions() {
+        try {
+            const localTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            
+            // Tag local transactions, and assign a default status (API transactions will have a status property)
+            return localTransactions.map(tx => ({ 
+                ...tx, 
+                source: 'local',
+                status: 'Successful' // Default status for locally tracked success
+            }));
+            
+        } catch (e) {
+            console.error("Error reading local transactions:", e);
+            return [];
+        }
+    }
+
+    // --- CORE FETCH FUNCTION: Fetch All Transactions (Combined API and Local) ---
+    async function fetchAllTransactions(token) {
+        const transactionsList = document.getElementById('transactions-list');
+        transactionsList.innerHTML = '<p class="text-center text-gray-500">Loading transactions...</p>';
+        
+        const localTxs = getLocalTransactions();
+        let apiTxs = [];
+        
+        try {
+            const response = await fetch(`${API_BASE_URL}/client/dashboard`, { 
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    showMessage('Access denied. Authentication failed. Redirecting to login.', 'Access Denied');
+                    handleLogout();
+                    return;
+                }
+                const error = await response.json().catch(() => ({ message: 'Server responded with an error.' }));
+                throw new Error(error.message || 'Failed to fetch transaction data from server.');
+            }
+
+            const { data } = await response.json();
+            
+            // Populate Header (from API data)
+            const initials = data.fullName.split(' ').map(n => n[0]).join('');
+            document.getElementById('avatar-img').src = data.profilePicturePath 
+                ? data.profilePicturePath 
+                : `https://placehold.co/40x40/ffc42a/0076a3?text=${initials}`;
+            
+            apiTxs = data.transactions || [];
+
+        } catch (error) {
+            console.warn('API Transactions Load Error. Using only local data:', error);
+        }
+        
+        // 4. Combine and Sort All Transactions
+        let allTransactions = [...localTxs, ...apiTxs];
+        
+        // Sort transactions by date descending (most recent first)
+        allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // 5. Populate the List
+        if (allTransactions.length > 0) {
+            transactionsList.innerHTML = allTransactions.map(createTransactionItem).join('');
+            document.getElementById('transaction-count').textContent = `Displaying ${allTransactions.length} total transactions.`;
+        } else {
+            transactionsList.innerHTML = '<p class="text-center text-gray-500">No transactions found in your history.</p>';
+            document.getElementById('transaction-count').textContent = 'Displaying 0 total transactions.';
+        }
+    }
+
+    // --- Event Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (initialToken) {
+            fetchAllTransactions(initialToken); 
+        }
+        // Ensure the global functions are attached for inline HTML handlers
+        window.toggleSidebar = toggleSidebar;
+        window.handleLogout = handleLogout;
+        window.showMessage = showMessage;
+        window.closeMessage = closeMessage;
+
+    });
+</script>
+</body>
+</html>

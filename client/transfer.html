@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunflower </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bank-blue': '#0076a3', // Deep Cyan/Teal
+                        'bank-yellow': '#ffc42a', // Vibrant Sunflower Yellow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Reusing common dashboard styles */
+        .banking-bg {
+            background-image: url('https://placehold.co/1920x120/0076a3/ffffff'); /* Replaced potentially missing image with a solid blue placeholder */
+            background-size: cover; 
+            background-position: center;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background-color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ffc42a;
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+        }
+        .message-box button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            background-color: #0076a3;
+            color: white;
+            border-radius: 8px;
+            transition: background-color 0.15s;
+        }
+        .message-box button:hover {
+            background-color: #005f82;
+        }
+        .header-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 120px; /* Shorter header for sub-page */
+            background-color: #0076a3;
+            z-index: 0;
+        }
+        /* Style for required form inputs */
+        input:required:not(:placeholder-shown):invalid, 
+        select:required:not(:placeholder-shown):invalid {
+            border-color: #ef4444; /* red-500 */
+            box-shadow: 0 0 0 1px #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+    
+    <div id="message-box-container" class="hidden"></div>
+    
+    <!-- Background Header -->
+    <div class="header-background"></div>
+
+    <div class="relative z-10 p-4 md:p-8 max-w-4xl mx-auto pt-6">
+
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-4">
+                <a href="user-dashboard.html" class="text-white hover:text-bank-yellow transition duration-150">
+                    <!-- Back Arrow Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                </a>
+                <h1 class="text-2xl md:text-3xl font-bold text-white">
+                    Fund Transfer
+                </h1>
+            </div>
+            <div class="text-white text-lg font-bold">
+                <span id="transfer-currency">Loading...</span>
+            </div>
+        </header>
+        
+        <div class="bg-white p-6 md:p-8 rounded-xl shadow-2xl border border-gray-100">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6 border-b pb-3 text-bank-blue">New Funds Transfer</h2>
+
+            <form id="transfer-form" class="space-y-6">
+                
+                <!-- Source Account Selection -->
+                <div>
+                    <label for="sourceAccountNumber" class="block text-sm font-medium text-gray-700 mb-1">Source Account</label>
+                    <select id="sourceAccountNumber" name="sourceAccountNumber" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150 bg-gray-50">
+                        <option value="" disabled selected>Select your source account</option>
+                        </select>
+                </div>
+                
+                <!-- Amount and Currency -->
+                <div class="flex space-x-4">
+                    <div class="flex-1">
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                        <input type="number" id="amount" name="amount" required min="0.01" step="0.01" placeholder="e.g. 500.00" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                    </div>
+                    <div class="w-20">
+                        <label for="currency" class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                        <input type="text" id="currency-display" value="USD" disabled class="w-full p-3 border border-gray-300 rounded-lg bg-gray-200 text-center font-semibold">
+                    </div>
+                </div>
+                
+                <!-- Recipient Type Selector -->
+                <div>
+                    <label for="recipientType" class="block text-sm font-medium text-gray-700 mb-1">Recipient Type</label>
+                    <select id="recipientType" name="recipientType" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150 bg-gray-50">
+                        <option value="" disabled selected>Select recipient type</option>
+                        <option value="internal">Transfer to My Other Account</option>
+                        <option value="external">Transfer to Another Bank/Person</option>
+                    </select>
+                </div>
+
+                <!-- Dynamic Recipient Fields Container -->
+                <div id="dynamic-recipient-fields" class="space-y-6">
+                    
+                    <!-- Internal Transfer Fields -->
+                    <div id="internal-fields" class="hidden">
+                        <label for="destinationAccountNumberInternal" class="block text-sm font-medium text-gray-700 mb-1">Destination Account</label>
+                        <select id="destinationAccountNumberInternal" name="destinationAccountNumberInternal" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150 bg-gray-50">
+                            <option value="" disabled selected>Select destination account</option>
+                        </select>
+                        <p class="text-xs text-red-500 mt-2" id="same-account-error" style="display: none;">Source and destination accounts cannot be the same.</p>
+                    </div>
+
+                    <!-- External Transfer Fields -->
+                    <div id="external-fields" class="hidden space-y-6">
+                        <div>
+                            <label for="transferType" class="block text-sm font-medium text-gray-700 mb-1">Transfer Type</label>
+                            <select id="transferType" name="transferType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150 bg-gray-50">
+                                <option value="" disabled selected>Select transfer method</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="destinationName" class="block text-sm font-medium text-gray-700 mb-1">Recipient Name</label>
+                                <input type="text" id="destinationName" name="destinationName" placeholder="John Doe" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                            </div>
+                            <div>
+                                <label for="destinationBank" class="block text-sm font-medium text-gray-700 mb-1">Destination Bank/Institution Name</label>
+                                <input type="text" id="destinationBank" name="destinationBank" placeholder="e.g., Chase Bank / Santander" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="recipientAddress" class="block text-sm font-medium text-gray-700 mb-1">Recipient Address (Street, City, State/Province, Country)</label>
+                            <input type="text" id="recipientAddress" name="recipientAddress" placeholder="123 Main St, Anytown, CA, USA" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="bankIdentifier" class="block text-sm font-medium text-gray-700 mb-1" id="bankIdentifierLabel">U.S. Routing Number (ABA)</label>
+                                <!-- pattern will be set dynamically in JS -->
+                                <input type="text" id="bankIdentifier" name="bankIdentifier" placeholder="e.g. 021000021" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                            </div>
+                            <div>
+                                <label for="destinationAccountNumber" class="block text-sm font-medium text-gray-700 mb-1">Destination Account/IBAN</label>
+                                <input type="text" id="destinationAccountNumber" name="destinationAccountNumber" placeholder="0001234567" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-bank-yellow focus:border-bank-yellow transition duration-150">
+                            </div>
+                        </div>
+                        
+                        <p class="text-xs text-gray-500 italic">
+                            Note: For non-USD transfers, the U.S. Routing Number field is typically replaced by the bank's **SWIFT/BIC Code**.
+                        </p>
+                        
+                    </div>
+                </div>
+                        
+                <!-- Transfer PIN -->
+                <div class="pt-4 border-t mt-6">
+                    <label for="transferPin" class="block text-sm font-medium text-gray-700 mb-1">Transfer PIN (4-Digits)</label>
+                    <input type="password" id="transferPin" name="transferPin" required pattern="\d{4}" maxlength="4" placeholder="••••" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition duration-150 text-center font-mono text-xl tracking-widest">
+                </div>
+                <p class="text-xs text-red-500 hidden" id="pin-error-message">Transfer PIN must be exactly 4 digits.</p>
+                
+                <!-- Submission Button -->
+                <div class="pt-4">
+                    <button type="submit" id="transfer-button" class="w-full py-3 px-4 bg-bank-blue text-white font-bold rounded-lg hover:bg-bank-blue/90 transition duration-200 flex items-center justify-center disabled:opacity-50" disabled>
+                        <span id="button-text">Confirm & Send Funds</span>
+                        <svg id="spinner" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-bank-blue text-white p-1 rounded">
+                    <p class="font-bold">Sunflower First National</p><span class="text-xs ml-1">.gfx</span>
+                </div>
+            </div>
+            <div class="text-center">
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+<script>
+    // --- Configuration: MUST MATCH THE KEYS/STORAGE USED IN THE DASHBOARD SCRIPT ---
+    const API_BASE_URL = '/api'; 
+    const SESSION_KEY_TOKEN = 'userToken'; // Standardized Key
+    const LOGIN_PAGE_URL = '../index.html'; // Fallback URL 
+    
+    let USER_CURRENCY = 'USD'; 
+    let ALL_ACCOUNTS = []; 
+
+    // --- Utility Functions ---
+
+    function showMessage(message, title = 'Notification', isError = false) {
+        const container = document.getElementById('message-box-container');
+        const borderColor = isError ? 'border-red-500' : 'border-bank-yellow';
+        const titleColor = isError ? 'text-red-600' : 'text-bank-blue';
+        
+        container.innerHTML = `
+            <div class="message-box ${borderColor} bg-white p-6 rounded-xl text-center z-[1001] shadow-xl">
+                <h3 class="text-xl font-bold mb-3 ${titleColor}">${title}</h3>
+                <p class="text-gray-700">${message}</p>
+                <button onclick="closeMessage()" class="mt-4 py-2 px-5 bg-bank-blue text-white rounded-lg transition hover:bg-bank-blue/80">Close</button>
+            </div>
+            <div class="fixed inset-0 bg-black/50 z-[1000]" onclick="closeMessage()"></div>
+        `;
+        container.classList.remove('hidden');
+    }
+
+    function closeMessage() {
+        document.getElementById('message-box-container').classList.add('hidden');
+    }
+
+/**
+ * Formats a number as currency, strictly enforcing absolute display when requested.
+ * This version uses a robust regex to strip ALL negative-related symbols, 
+ * including those used in international formatting like parentheses or trailing hyphens.
+ */
+const formatCurrency = (amount, currencyCode = 'USD', forceAbsolute = true) => {
+    const numberAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    
+    if (isNaN(numberAmount)) return '$0.00';
+    
+    // 1. Determine the number to format: absolute value for dropdowns, raw value for ledger.
+    const amountToFormat = forceAbsolute ? Math.abs(numberAmount) : numberAmount; 
+    
+    // 2. Format the number string using the standard formatter.
+    let formattedString = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode,
+        minimumFractionDigits: 2, 
+    }).format(amountToFormat);
+
+    // 3. 🔑 CRITICAL FIX: Strip ALL characters that signify a negative number.
+    if (forceAbsolute) {
+        // This regex removes:
+        // - Standard minus sign (-)
+        // - Parentheses ( and ) used for credit/negative in many accounting formats
+        // - The non-breaking space ( ) often used with the Euro symbol (€ -100.00)
+        formattedString = formattedString
+                            .replace(/[-\u2212\(\)]/g, '') // Remove standard minus and parentheses
+                            .replace(/\s+/g, ' ')           // Replace multiple spaces (including non-breaking) with one space
+                            .trim();                        // Final cleanup
+    }
+
+    // This ensures the output for dropdowns is always positive.
+    return formattedString;
+};
+
+    function setButtonState(isLoading) {
+        const button = document.getElementById('transfer-button');
+        const buttonText = document.getElementById('button-text');
+        const spinner = document.getElementById('spinner');
+
+        button.disabled = isLoading;
+        if (isLoading) {
+            buttonText.textContent = 'Processing...';
+            spinner.classList.remove('hidden');
+        } else {
+            buttonText.textContent = 'Confirm & Send Funds';
+            spinner.classList.add('hidden');
+            validateForm(); 
+        }
+    }
+    
+   function updateInternalDestinationAccounts() {
+    const sourceAccount = document.getElementById('sourceAccountNumber').value;
+    const destSelect = document.getElementById('destinationAccountNumberInternal');
+    const sameAccountError = document.getElementById('same-account-error');
+    
+    const currentDest = destSelect.value;
+    
+    destSelect.innerHTML = '<option value="" disabled selected>Select destination account</option>';
+
+    ALL_ACCOUNTS.forEach(account => {
+        if (account.accountNumber !== sourceAccount) {
+            const option = document.createElement('option');
+            option.value = account.accountNumber;
+            
+            // CRITICAL FIX: The dropdowns MUST be absolute (forceAbsolute=true) to remove the minus sign
+            const displayBalance = formatCurrency(account.balance, USER_CURRENCY, true);
+
+            console.log(`[DESTINATION] Account ${account.accountNumber.slice(-4)}: Raw Balance=${account.balance}, Displayed=${displayBalance}`);
+            
+            option.textContent = `${account.accountType} (${account.accountNumber.slice(-4)})  ${displayBalance}`;
+            
+            destSelect.appendChild(option);
+            
+            if (option.value === currentDest) {
+                option.selected = true;
+            }
+        }
+    });
+
+    if (sourceAccount === destSelect.value && sourceAccount !== "") {
+        sameAccountError.style.display = 'block';
+    } else {
+           sameAccountError.style.display = 'none';
+    }
+    
+    // 🔑 Fix: The initial call to validateForm() here is what caused the original error.
+    // However, since this function is called on an event listener change, it's generally safe.
+    // We will make validateForm more defensive below.
+    validateForm(); 
+}
+
+    function toggleRecipientFields(type) {
+        const internalFields = document.getElementById('internal-fields');
+        const externalFields = document.getElementById('external-fields');
+        const bankIdentifierLabel = document.getElementById('bankIdentifierLabel');
+        const bankIdentifierInput = document.getElementById('bankIdentifier');
+        
+        const internalInputs = document.querySelectorAll('#internal-fields select');
+        const externalInputs = document.querySelectorAll('#external-fields input, #external-fields select');
+
+        internalInputs.forEach(input => input.required = false);
+        externalInputs.forEach(input => input.required = false);
+        
+        internalFields.classList.add('hidden');
+        externalFields.classList.add('hidden');
+        document.getElementById('same-account-error').style.display = 'none';
+
+        if (type === 'internal') {
+            internalFields.classList.remove('hidden');
+            internalInputs.forEach(input => input.required = true);
+            
+            document.getElementById('transferType').value = '';
+            document.getElementById('destinationName').value = '';
+            document.getElementById('destinationBank').value = '';
+            document.getElementById('recipientAddress').value = ''; 
+            document.getElementById('bankIdentifier').value = ''; 
+            document.getElementById('destinationAccountNumber').value = '';
+
+        } else if (type === 'external') {
+            externalFields.classList.remove('hidden');
+
+            document.getElementById('transferType').required = true;
+            document.getElementById('destinationName').required = true;
+            document.getElementById('destinationBank').required = true;
+            document.getElementById('bankIdentifier').required = true; 
+            document.getElementById('destinationAccountNumber').required = true;
+
+            document.getElementById('destinationAccountNumberInternal').value = '';
+            
+            if (USER_CURRENCY === 'USD') {
+                bankIdentifierLabel.textContent = 'U.S. Routing Number (ABA)';
+                bankIdentifierInput.placeholder = 'e.g. 021000021';
+                bankIdentifierInput.pattern = '[0-9]{9}'; 
+            } else {
+                bankIdentifierLabel.textContent = 'SWIFT/BIC Code';
+                bankIdentifierInput.placeholder = 'e.g. CHASUS33';
+                bankIdentifierInput.pattern = '[A-Z0-9]{8,11}'; 
+            }
+
+        } else {
+            document.getElementById('destinationAccountNumberInternal').value = '';
+            document.getElementById('transferType').value = '';
+            document.getElementById('destinationName').value = '';
+        }
+        validateForm();
+    }
+
+function validateForm() {
+    const form = document.getElementById('transfer-form');
+    const pinInput = document.getElementById('transferPin');
+    const button = document.getElementById('transfer-button');
+    const sourceAccountSelect = document.getElementById('sourceAccountNumber');
+    const amountInput = document.getElementById('amount'); 
+
+    // 🔑 FIX: Only check for CRITICAL form/button/input elements.
+    // Error message elements (pinErrorMessage, balanceError, sameAccountError) 
+    // are NON-CRITICAL and should not block the core validation logic.
+    if (!form || !pinInput || !button || !sourceAccountSelect || !amountInput) {
+         console.warn("validateForm skipped: CRITICAL DOM elements are missing. Interaction will not work.");
+         return; // Safely exit if DOM isn't ready
+    }
+    
+    // Now, get the non-critical error elements (they might be null, but the code will be safe)
+    const pinErrorMessage = document.getElementById('pin-error-message');
+    const sameAccountError = document.getElementById('same-account-error');
+    const balanceError = document.getElementById('balance-error-message'); 
+    
+    
+    const isPinValid = pinInput.value.length === 4;
+    
+    // 🔑 Fix 1 (Defensive check for classList): Check if pinErrorMessage exists before using classList
+    if (pinInput.value.length > 0 && !isPinValid) {
+        if (pinErrorMessage) pinErrorMessage.classList.remove('hidden');
+    } else {
+        if (pinErrorMessage) pinErrorMessage.classList.add('hidden');
+    }
+
+    const isFormValid = form.checkValidity() && isPinValid;
+    let isTransferLogicValid = true;
+    let isBalanceValid = true; 
+    
+    // Check if source and destination are the same for internal transfer
+    const recipientType = document.getElementById('recipientType').value;
+    if (recipientType === 'internal') {
+        // ... (existing logic) ...
+        const source = sourceAccountSelect.value;
+        const dest = document.getElementById('destinationAccountNumberInternal').value;
+        
+        // 🔑 Fix 2 (Defensive check for sameAccountError): Check if element exists
+        if (sameAccountError) {
+             if (source === dest && source !== "") {
+                sameAccountError.style.display = 'block';
+                isTransferLogicValid = false;
+             } else {
+                sameAccountError.style.display = 'none';
+             }
+        } else if (source === dest && source !== "") {
+            // Fallback for logic validation even if error element is missing
+            isTransferLogicValid = false;
+        }
+    }
+    
+    // 🔑 UPDATED: Insufficient Funds / Zero-Balance Check
+    const sourceAccountNum = sourceAccountSelect.value;
+    const selectedSourceAccount = ALL_ACCOUNTS.find(a => a.accountNumber === sourceAccountNum);
+    
+    const rawBalance = selectedSourceAccount ? selectedSourceAccount.balance : 0; 
+    const transferAmount = parseFloat(amountInput.value) || 0; 
+    
+    // Check 1: Must have a selected source account and a positive transfer amount
+    if (sourceAccountNum && transferAmount > 0) {
+        
+        // Check 2: The result of the debit must not be negative
+        if (rawBalance - transferAmount < 0) {
+            
+            // 🔑 Fix 3 (Defensive check for balanceError): Check if element exists
+            if (balanceError) {
+                balanceError.textContent = `Insufficient Funds: Transfer amount of ${formatCurrency(transferAmount, USER_CURRENCY, false)} exceeds available balance of ${formatCurrency(rawBalance, USER_CURRENCY, false)}. Overdrafts are not permitted.`;
+                balanceError.classList.remove('hidden');
+            }
+            isBalanceValid = false; // Disable the button even if error element is missing
+            
+        } else {
+            // Funds are sufficient
+            if (balanceError) balanceError.classList.add('hidden');
+            isBalanceValid = true;
+        }
+    } 
+    // Check 3: Clear the error if no account is selected or amount is 0
+    else {
+        if (balanceError) balanceError.classList.add('hidden');
+        isBalanceValid = true;
+    }
+
+    // This line will now always run when the user types, enabling the button.
+    button.disabled = !(isFormValid && isTransferLogicValid && isBalanceValid);
+}
+
+
+async function fetchInitialData() {
+    const token = sessionStorage.getItem(SESSION_KEY_TOKEN);
+    if (!token) {
+        showMessage('Session expired. Redirecting to login.', 'Authentication Required', true);
+        setTimeout(() => window.location.href = LOGIN_PAGE_URL, 1500);
+        return;
+    }
+
+    try {
+        // 1. Fetch Dashboard data for accounts
+        const dashboardResponse = await fetch(`${API_BASE_URL}/client/dashboard`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!dashboardResponse.ok) {
+            const errorData = await dashboardResponse.json().catch(() => ({ message: 'Unknown error' }));
+            throw new Error(errorData.message || `Failed to fetch accounts (Status: ${dashboardResponse.status})`);
+        }
+
+        const { data: dashboardData } = await dashboardResponse.json();
+        
+        console.log("--- Raw Accounts Data Received from /client/dashboard API ---");
+        console.log(dashboardData.accounts);
+        console.log("----------------------------------------------------------");
+
+        ALL_ACCOUNTS = dashboardData.accounts || [];
+        USER_CURRENCY = dashboardData.currency || 'USD'; 
+        
+        // 2. Fetch Transfer Types (with fallback logic - Omitted for brevity)
+        let transferTypes = ['Standard Transfer', 'Wire Transfer', 'Immediate Transfer'];
+        
+        try {
+             // ... existing transfer types fetch logic ...
+             const typesResponse = await fetch(`${API_BASE_URL}/client/transfer-types`, {
+                 headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (typesResponse.ok) {
+                const typesData = await typesResponse.json();
+                if (Array.isArray(typesData.transferTypes)) {
+                    transferTypes = typesData.transferTypes;
+                }
+            } else {
+                console.warn(`Server did not return transfer types (Status: ${typesResponse.status}). Using default types.`);
+            }
+        } catch (error) {
+            console.warn(`Failed to connect to /transfer-types endpoint. Using default types. Error: ${error.message}`);
+        }
+        
+    // 3. Populate Accounts 
+    const sourceSelect = document.getElementById('sourceAccountNumber');
+
+    // Start with the placeholder
+    let optionsHtml = '<option value="" disabled selected>Select your source account</option>';
+
+    if (ALL_ACCOUNTS.length > 0) {
+        ALL_ACCOUNTS.forEach(account => {
+            
+            // CRITICAL: The dropdowns MUST be absolute (forceAbsolute=true) to remove the minus sign
+            // This relies on your robust formatCurrency function to strip the minus sign.
+            const displayBalance = formatCurrency(account.balance, USER_CURRENCY, true);
+
+            console.log(`[SOURCE] Account ${account.accountNumber.slice(-4)}: Raw Balance=${account.balance}, Displayed=${displayBalance}`);
+            
+            // Build the display text, including the correctly formatted (positive) balance
+            const optionText = `${account.accountType} (${account.accountNumber.slice(-4)})  ${displayBalance}`;
+            
+            // Append the new option's HTML string
+            optionsHtml += `<option value="${account.accountNumber}">${optionText}</option>`;
+        });
+    } else {
+        showMessage('No accounts found. Transfer functionality is disabled.', 'Account Error', true);
+    }
+
+    // Apply all options at once.
+    sourceSelect.innerHTML = optionsHtml;
+        
+        // 4. Populate External Transfer Types (Omitted for brevity)
+        const typeSelect = document.getElementById('transferType');
+        typeSelect.innerHTML = '<option value="" disabled selected>Select transfer method</option>';
+        transferTypes.forEach(type => {
+            const option = document.createElement('option');
+            const optionClone = option.cloneNode(true);
+            optionClone.value = type;
+            optionClone.textContent = type;
+            typeSelect.appendChild(optionClone);
+        });
+
+        // 5. Update UI elements & initial state
+        document.getElementById('currency-display').value = USER_CURRENCY;
+        document.getElementById('transfer-currency').textContent = `Currency: ${USER_CURRENCY}`;
+        
+        // 🔑 FIX: Call updateInternalDestinationAccounts(), and let it call validateForm() IF the DOM is ready.
+        // The check inside validateForm() handles the case where it's called too early.
+        updateInternalDestinationAccounts(); 
+
+    } catch (error) {
+        console.error('Initial Load Error:', error);
+        showMessage(`Failed to load initial data: ${error.message}`, 'Error', true);
+        document.getElementById('transfer-button').disabled = true; 
+    }
+}
+    // --- Transfer Submission Handler ---
+
+    async function handleTransfer(event) {
+    event.preventDefault();
+    setButtonState(true);
+
+    const token = sessionStorage.getItem(SESSION_KEY_TOKEN);
+    const form = event.target;
+    const recipientType = document.getElementById('recipientType').value;
+
+    if (!token || !form.checkValidity() || document.getElementById('transferPin').value.length !== 4) {
+        showMessage('Please fill in all required fields correctly, and ensure PIN is 4 digits.', 'Validation Error', true);
+        setButtonState(false);
+        return;
+    }
+    
+    const formData = new FormData(form);
+    const payload = Object.fromEntries(formData.entries());
+    
+    delete payload['currency-display'];
+    
+    // Logic to construct the final payload (Internal vs External)
+    if (recipientType === 'internal') {
+        payload.destinationAccountNumber = payload.destinationAccountNumberInternal;
+        payload.transferType = 'Internal Account Transfer';
+        payload.destinationName = 'Self-Transfer';
+        payload.destinationBank = 'Sunflower Bank';
+        delete payload.destinationAccountNumberInternal;
+        delete payload.recipientAddress; 
+        delete payload.bankIdentifier;
+    } else if (recipientType === 'external') {
+        delete payload.destinationAccountNumberInternal; 
+    }
+    
+    delete payload.recipientType;
+    payload.amount = parseFloat(payload.amount);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/client/transfer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        // Ensure the response body is parsed only once
+        const result = await response.json().catch(() => ({ message: `Server returned status ${response.status} with an unexpected format.` }));
+        
+        if (response.ok) {
+            if (result.success) {
+                // 🔑 SUCCESS: Show final balance
+                showMessage(
+                    `${result.message} Your new balance for the source account is ${formatCurrency(result.newBalance, result.currency, false)}.`,
+                    'Transfer Successful! 🎉',
+                    false
+                );
+                form.reset(); 
+                toggleRecipientFields('');
+                fetchInitialData(); // Re-fetch data to update balances
+            } else {
+                const errorMessage = result.message || 'Transfer completed with an unexpected error status.';
+                showMessage(`Transfer Failed: ${errorMessage}`, 'Transfer Error', true);
+            }
+        } else {
+            
+            let errorTitle = 'Transfer Error';
+            
+            if (response.status === 403) {
+                errorTitle = 'Authentication Error 🔒';
+            } else if (response.status === 404) {
+                errorTitle = 'Data Error'; 
+            } 
+            
+            // 🔑 CRITICAL UPDATE: Handling the 409 Conflict status
+            else if (response.status === 409) {
+                // Check for Admin Policy or Zero Balance Policy response structures
+                if (result.policyType === 'ADMIN_POLICY' && result.conditionalMessage) {
+                    errorTitle = 'Transfer Blocked by Policy 🔒'; 
+                    showMessage(result.conditionalMessage, errorTitle, true);
+                    return; // Exit and do not show generic message
+                } else if (result.policyType === 'ZERO_BALANCE_BREACH' && result.conditionalMessage) {
+                    errorTitle = 'Insufficient Funds ⚠️'; 
+                    showMessage(result.conditionalMessage, errorTitle, true);
+                    // Force re-fetch to ensure the local balance is correct
+                    fetchInitialData(); 
+                    return; // Exit and do not show generic message
+                }
+            }
+            
+            const errorMessage = result.message || `Server returned status ${response.status}. Transfer failed.`;
+            showMessage(`Transfer Failed: ${errorMessage}`, errorTitle, true);
+        }
+
+    } catch (error) {
+        console.error('Network or Server Error:', error);
+        showMessage('A network error occurred. Check your connection or server status.', 'Connection Error', true);
+    } finally {
+        setButtonState(false);
+    }
+}
+    
+    // Expose functions globally for inline event handlers (like closeMessage)
+    window.showMessage = showMessage;
+    window.closeMessage = closeMessage;
+    window.updateInternalDestinationAccounts = updateInternalDestinationAccounts; 
+
+    // --- Event Listeners and Initialization ---
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        fetchInitialData();
+        
+        const recipientTypeSelect = document.getElementById('recipientType');
+        const sourceAccountSelect = document.getElementById('sourceAccountNumber');
+        const internalDestSelect = document.getElementById('destinationAccountNumberInternal');
+        const form = document.getElementById('transfer-form');
+
+        recipientTypeSelect.addEventListener('change', (e) => toggleRecipientFields(e.target.value));
+        sourceAccountSelect.addEventListener('change', updateInternalDestinationAccounts);
+        internalDestSelect.addEventListener('change', validateForm); 
+        
+        form.addEventListener('input', validateForm);
+
+        // 🔑 REMOVED: The initial validateForm() call here, as it's now safely called
+        // after account data loading and element population in fetchInitialData.
+        
+        form.addEventListener('submit', handleTransfer);
+    });
+</script>
+</body>
+</html>

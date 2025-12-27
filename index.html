@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Sunflower </title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Load Inter Font and Custom Styles */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+            /* Using user-provided background image for a professional look */
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        
+        /* Custom bank blue color: #0076a3 */
+        .bank-blue {
+            background-color: #0076a3;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        .focus\:ring-bank-blue:focus {
+            --tw-ring-color: #0076a3;
+        }
+        
+        /* Style for the 2FA code input to center and track wider */
+        #twoFactorCode {
+            letter-spacing: 0.5em; /* Increase letter spacing for code input */
+        }
+
+        /* Ensure smooth visibility transition for forms */
+        .form-transition {
+            transition: opacity 300ms ease-in-out, transform 300ms ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="text-gray-800">
+
+    <!-- Message Box for alerts (replaces alert() function) -->
+    <div id="message-box" class="fixed top-0 left-0 w-full p-4 text-white text-center shadow-lg transition-all duration-300 z-50 hidden"></div>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- Login Card: Responsive width ensures good mobile and desktop fit -->
+        <!-- Adjusted: Added lg:max-w-md for better desktop spacing (448px wide) -->
+        <div id="login-card" class="bg-white p-6 md:p-10 rounded-xl shadow-2xl w-full max-w-sm lg:max-w-md transition-all duration-300">
+
+            <div class="text-center mb-6">
+                <!-- LOGO: Using user-provided image link -->
+                <img src="https://i.imgur.com/NQxhjxt.png" alt="Sunflower Union Logo" class="mx-auto h-12 mb-4"> 
+                
+                <!-- FDIC and Security text -->
+                <p class="text-xs text-gray-500 mt-4">
+                    <span class="font-bold text-xs text-blue-800">FDIC</span> Insured. Secured by the full faith and credit of the Government
+                </p>
+            </div>
+
+            <!-- 1. User ID and Password Form -->
+            <form id="user-login-form" class="form-transition opacity-100 translate-y-0">
+                
+                <div class="mb-4">
+                    <label for="userIdName" class="block text-sm font-medium text-gray-700 sr-only">User ID</label>
+                    <!-- Input styles are large enough for touch targets and span full width (w-full) -->
+                    <input type="text" id="userIdName" name="userIdName" required placeholder="User ID"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150 shadow-inner">
+                </div>
+
+                <div class="mb-4">
+                    <label for="userPassword" class="block text-sm font-medium text-gray-700 sr-only">Password</label>
+                    <!-- Input styles are large enough for touch targets and span full width (w-full) -->
+                    <input type="password" id="userPassword" name="userPassword" required placeholder="Password"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150 shadow-inner">
+                </div>
+
+                <div class="flex items-center mb-6">
+                    <input type="checkbox" id="rememberMe" name="rememberMe"
+                            class="h-4 w-4 text-bank-blue border-gray-300 rounded focus:ring-bank-blue">
+                    <!-- Text size adapts from xs to sm on medium screens -->
+                    <label for="rememberMe" class="ml-2 block text-xs md:text-sm text-gray-700 select-none">Remember my User ID</label>
+                </div>
+
+                <button type="submit" id="login-button"
+                        class="bank-blue w-full text-white py-3 rounded-lg font-semibold transition duration-300 shadow-lg hover:shadow-xl hover:opacity-95 text-sm md:text-base disabled:opacity-75 disabled:cursor-not-allowed">
+                    Log In
+                </button>
+            </form>
+            
+            <!-- 2. Two-Factor Authentication Form (Hidden initially) -->
+            <form id="2fa-form" class="hidden form-transition opacity-0 -translate-y-2">
+                <p id="two-factor-message" class="text-xs md:text-sm text-center text-gray-600 mb-4 font-medium">
+                    Please enter the one-time code sent to your registered email.
+                </p>
+                <div class="mb-4">
+                    <label for="twoFactorCode" class="block text-sm font-medium text-gray-700 sr-only">2FA Code</label>
+                    <!-- Wide input for code entry, spans full width -->
+                    <input type="text" id="twoFactorCode" name="twoFactorCode" required placeholder="— — — — — —" pattern="\d{6}" maxlength="6" inputmode="numeric"
+                            class="w-full px-3 py-3 border-2 border-gray-300 rounded-lg text-xl text-center font-mono focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+                
+                <button type="submit" id="verify-2fa-button"
+                        class="bank-blue w-full text-white py-3 rounded-lg font-semibold transition duration-300 shadow-lg hover:shadow-xl hover:opacity-95 text-sm md:text-base disabled:opacity-75 disabled:cursor-not-allowed">
+                    Verify Code
+                </button>
+                <div class="text-center mt-4">
+                    <a href="#" id="resend-code-link" class="text-bank-blue text-xs hover:underline transition duration-150">Resend Code</a>
+                </div>
+            </form>
+
+            <!-- 3. General Auth Links -->
+            <div id="auth-links">
+                <div class="text-center mt-4">
+                    <a href="#" class="text-bank-blue text-sm hover:underline font-medium">Forgot Password?</a>
+                </div>
+
+                <hr class="my-6 border-gray-200">
+
+                <!-- Grid structure for links, ensuring two columns on all sizes -->
+                <div class="grid grid-cols-2 gap-y-3 text-xs sm:text-sm text-center">
+                    <a href="create-user-account.html" class="text-bank-blue hover:underline">Register New User</a>
+                    <a href="#" class="text-gray-600 hover:text-bank-blue hover:underline">Supported Browsers</a>
+                    <a href="#" class="text-gray-600 hover:text-bank-blue hover:underline">En español</a>
+                    <a href="#" class="text-gray-600 hover:text-bank-blue hover:underline">Privacy Policy</a>
+                    <a href="admin/admin-login.html" class="text-bank-blue font-medium hover:underline">Placeholder</a>
+                    <a href="#" class="text-gray-600 hover:text-bank-blue hover:underline">Sign in Problems FAQ</a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer: Responsive layout using flex-col on mobile and flex-row on medium screens -->
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto border-t border-gray-100">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            
+            <div class="flex items-center space-x-2">
+                <p class="font-bold text-bank-blue">Sunflower Union </p>
+            </div>
+            
+            <div class="text-center">
+                <!-- Tiny text size for regulatory information, ensuring it doesn't take up too much space on mobile -->
+                <p class="text-[10px] sm:text-xs">Routing Number: 101130607</p>
+                <p class="mt-1 text-[10px] sm:text-xs">&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <!-- Logos group remains horizontal -->
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EHL" alt="Equal Housing Lender" class="h-5 rounded-sm">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5 rounded-sm">
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for 2FA Logic and API Interaction -->
+    <script>
+        // --- API Endpoints (Must match your running backend server) ---
+        // NOTE: These URLs must point to a backend that supports the 2FA flow.
+        const API_LOGIN_URL = '/api/users/login'; 
+        const API_SEND_OTP_URL = '/api/users/send-otp';
+        const API_VERIFY_OTP_URL = '/api/users/verify-otp'; 
+
+        // --- Session Storage Key ---
+        const SESSION_KEY_USER_ID = '2fa_userId';
+
+        // --- DOM Elements ---
+        const loginForm = document.getElementById('user-login-form');
+        const twoFAForm = document.getElementById('2fa-form'); 
+        const userIdNameInput = document.getElementById('userIdName');
+        const userPasswordInput = document.getElementById('userPassword');
+        const twoFactorCodeInput = document.getElementById('twoFactorCode'); 
+        const rememberMeCheckbox = document.getElementById('rememberMe');
+        const loginButton = document.getElementById('login-button');
+        const verify2FAButton = document.getElementById('verify-2fa-button'); 
+        const messageBox = document.getElementById('message-box');
+        const authLinks = document.getElementById('auth-links'); 
+        const resendCodeLink = document.getElementById('resend-code-link');
+        const twoFactorMessage = document.getElementById('two-factor-message');
+
+        // Global variable to store the User ID during the 2FA flow
+        let globalUserIdName = '';
+
+
+        /**
+         * Loads User ID from localStorage if "Remember Me" was checked.
+         * Loads globalUserIdName from sessionStorage if 2FA flow was interrupted.
+         */
+        function loadInitialState() {
+            // 1. Load Remembered User ID for form field
+            const rememberedUserId = localStorage.getItem('rememberedUserId');
+            if (rememberedUserId) {
+                userIdNameInput.value = rememberedUserId;
+                rememberMeCheckbox.checked = true;
+            }
+
+            // 2. Load User ID for ongoing 2FA session (handles accidental refreshes)
+            const storedUserId = sessionStorage.getItem(SESSION_KEY_USER_ID);
+            if (storedUserId) {
+                globalUserIdName = storedUserId;
+                
+                // Show 2FA form immediately on load if session state exists
+                twoFAForm.classList.remove('hidden', 'opacity-0', '-translate-y-2');
+                twoFAForm.classList.add('opacity-100', 'translate-y-0');
+                loginForm.classList.add('hidden');
+                authLinks.classList.add('hidden');
+
+                // Set a generic message, as the masked email may not be available after refresh
+                twoFactorMessage.innerHTML = `Please enter the one-time code sent to **your registered email** for verification.`;
+                showMessage('Verification in progress. Please enter the code sent earlier.', 'bg-orange-600');
+            }
+        }
+
+        /**
+         * Displays a temporary message at the top of the screen.
+         * @param {string} message - The message text.
+         * @param {string} bgColorClass - Tailwind class for the background color (e.g., 'bg-red-500').
+         */
+        function showMessage(message, bgColorClass) {
+            // Clear previous classes and content
+            messageBox.className = 'fixed top-0 left-0 w-full p-4 text-white text-center shadow-lg transition-all duration-300 z-50';
+            messageBox.classList.remove('hidden');
+            // Remove previous bg classes before adding the new one
+            messageBox.classList.remove('bg-red-500', 'bg-red-700', 'bg-orange-500', 'bg-orange-600', 'bg-bank-blue', 'bg-green-500'); 
+            messageBox.classList.add(bgColorClass);
+            messageBox.innerHTML = `<p class="font-medium">${message}</p>`;
+
+            // Auto-hide the message after 4 seconds
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 4000);
+        }
+
+        /**
+         * Transitions the UI from the credential form to the 2FA form.
+         */
+        function showTwoFactorForm() {
+            // Hide password after successful first step for security
+            userPasswordInput.value = ''; 
+            
+            // Step 1: Start transition out for login form
+            loginForm.classList.remove('opacity-100', 'translate-y-0');
+            loginForm.classList.add('opacity-0', '-translate-y-2');
+            authLinks.classList.add('hidden'); 
+
+            // Wait for transition to finish before hiding the main form and showing 2FA form
+            setTimeout(() => {
+                loginForm.classList.add('hidden');
+                twoFAForm.classList.remove('hidden', 'opacity-0', '-translate-y-2');
+                
+                // Step 2: Start transition in for 2FA form
+                twoFAForm.classList.add('opacity-100', 'translate-y-0');
+
+                twoFactorCodeInput.value = ''; // Clear input
+                twoFactorCodeInput.focus();
+            }, 300); // Match CSS transition duration
+        }
+
+        /**
+         * Transitions the UI back to the credential form.
+         */
+        function showLoginForm() {
+            // Step 1: Start transition out for 2FA form
+            twoFAForm.classList.remove('opacity-100', 'translate-y-0');
+            twoFAForm.classList.add('opacity-0', '-translate-y-2');
+            
+            // Clear session storage state on going back to login
+            sessionStorage.removeItem(SESSION_KEY_USER_ID);
+            globalUserIdName = '';
+            
+            // Wait for transition to finish before hiding the 2FA form and showing login form
+            setTimeout(() => {
+                twoFAForm.classList.add('hidden');
+                authLinks.classList.remove('hidden');
+                
+                loginForm.classList.remove('hidden', 'opacity-0', '-translate-y-2');
+                // Step 2: Start transition in for login form
+                loginForm.classList.add('opacity-100', 'translate-y-0');
+                
+                userIdNameInput.focus();
+            }, 300); // Match CSS transition duration
+            
+            // Reset button state
+            loginButton.innerHTML = 'Log In';
+            loginButton.disabled = false;
+        }
+
+        /**
+         * Generic function to set the button to a loading state.
+         * @param {HTMLElement} button - The button element.
+         * @param {string} text - The loading text.
+         */
+        function setLoadingState(button, text) {
+            button.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                ${text}
+            `;
+            button.disabled = true;
+        }
+
+        // ----------------------------------------------------------------------------------
+        // --- 2. Send OTP Request (Triggered by the Resend link) ---
+        // ----------------------------------------------------------------------------------
+
+        async function sendOtpRequest(userIdName) {
+            // Temporarily disable the resend link to prevent spamming
+            resendCodeLink.classList.add('opacity-50', 'pointer-events-none');
+            resendCodeLink.textContent = 'Sending...';
+            
+            try {
+                let response;
+                let data;
+                const maxRetries = 3;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    response = await fetch(API_SEND_OTP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userIdName: userIdName }),
+                    });
+
+                    if (response.status !== 429 && response.status !== 503) {
+                        data = await response.json();
+                        break;
+                    }
+
+                    // Exponential backoff delay
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                if (response.ok) {
+                    console.log('OTP resend successful.');
+                    showMessage('A new verification code has been sent.', 'bg-bank-blue');
+                } else {
+                    const errorMessage = data.message || 'Failed to resend verification code.';
+                    showMessage(errorMessage, 'bg-red-500');
+                    console.error('Resend OTP Failed:', errorMessage);
+                }
+            } catch (error) {
+                console.error('Network error during OTP resend request:', error);
+                showMessage('Connection error during OTP resend. Server may be down.', 'bg-red-700');
+            } finally {
+                // Reset resend link state after 10 seconds, regardless of success
+                setTimeout(() => {
+                    resendCodeLink.classList.remove('opacity-50', 'pointer-events-none');
+                    resendCodeLink.textContent = 'Resend Code';
+                }, 10000); 
+            }
+        }
+
+        // ----------------------------------------------------------------------------------
+        // --- 1. Main Login Handler (Step 1: Credentials Check) ---
+        // ----------------------------------------------------------------------------------
+
+        loginForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            
+            const currentUserId = userIdNameInput.value.trim();
+            const userPassword = userPasswordInput.value;
+
+            // --- Client-Side Validation ---
+            if (!currentUserId || !userPassword) {
+                showMessage('Both User ID and Password are required.', 'bg-orange-500');
+                (!currentUserId ? userIdNameInput : userPasswordInput).focus();
+                return;
+            }
+            // -----------------------------
+
+            setLoadingState(loginButton, 'Checking Credentials...');
+
+            try {
+                let response;
+                let data;
+                const maxRetries = 3;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    response = await fetch(API_LOGIN_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            // Keys for initial credential check
+                            loginIdentifier: currentUserId, 
+                            userPassword: userPassword 
+                        }), 
+                    });
+
+                    if (response.status !== 429 && response.status !== 503) {
+                        data = await response.json();
+                        break;
+                    }
+
+                    // Exponential backoff delay
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                // 🚨 2FA FLOW STEP: Password success, OTP sent by server, need verification
+                if (response.status === 202 && data.nextStep === 'VERIFY_OTP') { 
+                    
+                    console.log('Password verified. OTP successfully initiated by server. Proceeding to 2FA verification.');
+                    
+                    // Store the User ID globally and in sessionStorage for persistence
+                    globalUserIdName = currentUserId; 
+                    sessionStorage.setItem(SESSION_KEY_USER_ID, globalUserIdName);
+
+                    // Display specific message mentioning the masked email
+                    const maskedEmail = data.maskedEmail || 'your registered email';
+                    twoFactorMessage.innerHTML = `Please enter the one-time code sent to **${maskedEmail}** for verification.`;
+                    
+                    showMessage(`Password verified. Please check ${maskedEmail} for your code.`, 'bg-bank-blue');
+
+                    // Reset button state and then transition the UI
+                    loginButton.innerHTML = 'Log In';
+                    loginButton.disabled = false;
+                    
+                    showTwoFactorForm();
+                    
+                } else if (response.ok) {
+                    // Successful Login without 2FA (if the backend allows it)
+                    sessionStorage.removeItem(SESSION_KEY_USER_ID); // Clear session state if full login occurred
+                    handleSuccessfulLogin(data, currentUserId);
+
+                } else {
+                    // Handle Failure (401, 400, 500 etc.)
+                    const errorMessage = data.message || 'Login failed. Please check your User ID and Password.';
+                    showMessage(errorMessage, 'bg-red-500');
+                    console.error('Login Failed:', errorMessage);
+                    userPasswordInput.value = '';
+                    loginButton.innerHTML = 'Log In';
+                    loginButton.disabled = false;
+                }
+
+            } catch (error) {
+                console.error('Network or Server Error during login:', error);
+                showMessage('Connection error. Please ensure the backend server is running.', 'bg-red-700');
+                loginButton.innerHTML = 'Log In';
+                loginButton.disabled = false;
+            }
+        });
+
+
+        // ----------------------------------------------------------------------------------
+        // --- 3. 2FA Verification Handler (Step 3: Code Check) ---
+        // ----------------------------------------------------------------------------------
+
+        twoFAForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const twoFactorCode = twoFactorCodeInput.value.trim();
+
+            if (!globalUserIdName) {
+                // If session state is missing, force re-login
+                showMessage('User session lost. Please log in again.', 'bg-red-500');
+                showLoginForm();
+                return;
+            }
+
+            if (twoFactorCode.length !== 6 || !/^\d{6}$/.test(twoFactorCode)) {
+                showMessage('The code must be exactly 6 digits.', 'bg-orange-500');
+                return;
+            }
+
+            setLoadingState(verify2FAButton, 'Verifying...');
+            
+            // 💡 UPDATED LOGGING: Confirm what is being sent
+            console.log(`[DEBUG] Attempting to verify OTP for loginIdentifier: ${globalUserIdName} with Code: ${twoFactorCode}`);
+            // -----------------------------------------------
+
+            try {
+                let response;
+                let data;
+                const maxRetries = 3;
+
+                for (let i = 0; i < maxRetries; i++) {
+                    response = await fetch(API_VERIFY_OTP_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            // FIX: Changed keys from 'identifier' and 'otp_code' to 'loginIdentifier' and 'otpCode'
+                            loginIdentifier: globalUserIdName,
+                            otpCode: twoFactorCode
+                        }), 
+                    });
+
+                    if (response.status !== 429 && response.status !== 503) {
+                        // The server response will be handled below
+                        try {
+                            data = await response.json();
+                        } catch (e) {
+                            // Handle cases where the server returns a non-JSON response (like the HTML in your error log)
+                            console.error('Failed to parse JSON response from server. Received status:', response.status);
+                            throw new Error('Server returned non-JSON response during OTP verification.');
+                        }
+                        break;
+                    }
+
+                    // Exponential backoff delay
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+
+                if (response.ok) {
+                    // Handle Final Success (JWT token received here)
+                    console.log('2FA successful. Redirecting.');
+                    sessionStorage.removeItem(SESSION_KEY_USER_ID); // Clear session state on successful verification
+                    handleSuccessfulLogin(data, globalUserIdName);
+
+                } else {
+                    // Handle 2FA Failure (e.g., wrong code, expired)
+                    const errorMessage = data.message || 'Invalid verification code. Please try again.';
+                    showMessage(errorMessage, 'bg-red-500');
+                    console.error('2FA Failed:', errorMessage);
+                    twoFactorCodeInput.value = ''; // Clear code input
+                }
+
+            } catch (error) {
+                console.error('Network or Server Error during 2FA:', error);
+                showMessage('Connection error during verification. Server may be down.', 'bg-red-700');
+            } finally {
+                // Hide Loading State and Re-enable Button
+                verify2FAButton.innerHTML = 'Verify Code';
+                verify2FAButton.disabled = false;
+            }
+        });
+
+        // --- Successful Login Logic (Used by both steps) ---
+
+function handleSuccessfulLogin(data, userIdName) {
+    // ✅ FIX: Use sessionStorage for authentication tokens and sensitive user info
+    sessionStorage.setItem('userToken', data.token); // ✅ CORRECTED
+    sessionStorage.setItem('currentUserId', data.userId); // ✅ CORRECTED
+    sessionStorage.setItem('currentUserName', data.fullName || 'Valued Customer'); // ✅ CORRECTED
+
+    // Handle "Remember Me" (This is correct to use localStorage)
+    if (rememberMeCheckbox.checked) {
+        localStorage.setItem('rememberedUserId', userIdName);
+    } else {
+        localStorage.removeItem('rememberedUserId');
+    }
+            
+            showMessage(`Welcome, ${data.fullName || 'Valued Customer'}! Redirecting to dashboard.`, 'bg-green-500');
+            
+            // Delay redirect slightly to show the success message
+            setTimeout(() => {
+                // Redirect to the main dashboard page after successful login
+                window.location.href = 'client/user-dashboard.html'; 
+            }, 1000);
+        }
+
+        // --- Resend Code Link Event Listener ---
+        resendCodeLink.addEventListener('click', async function(event) {
+            event.preventDefault();
+            // Re-use the send OTP function
+            if (globalUserIdName) {
+                // Resending the code to the user associated with globalUserIdName
+                await sendOtpRequest(globalUserIdName); 
+            } else {
+                showMessage('User session lost. Please log in again.', 'bg-orange-500');
+            }
+        });
+        
+        // Initial load check
+        document.addEventListener('DOMContentLoaded', loadInitialState);
+    </script>
+</body>
+</html>

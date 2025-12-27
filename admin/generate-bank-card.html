@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Bank Card - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Space Mono', 'monospace'],
+                    },
+                    colors: {
+                        // Define the custom accent color
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', // Primary blue
+                            dark: '#005f82',    // Darker hover blue
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Background (using the image and overlay) */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Dark overlay for better contrast */
+            background-color: rgba(0, 0, 0, 0.4);
+            background-blend-mode: overlay;
+        }
+        /* Custom styles for the card, ensuring the number spacing is perfect */
+        .card-number-display {
+            /* Reduced letter spacing slightly */
+            letter-spacing: 0.12em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+            /* Fluid font size for better responsiveness */
+            font-size: clamp(1.1rem, 4vw, 1.5rem);
+        }
+        /* Custom gradient for a premium card look */
+        .premium-card-bg {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #111827 100%);
+            /* Ensure the card has a fixed aspect ratio on all screens */
+            max-width: 100%;
+            aspect-ratio: 1.586 / 1; /* Standard credit card aspect ratio (approx) */
+            height: auto; /* Let aspect-ratio control height */
+            min-height: 12rem; /* Minimum readable height on very small devices */
+        }
+
+        /* Ensure smooth scaling for the entire card element */
+        #bankCard {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Responsive typography for card holder name */
+        #displayName {
+            font-size: clamp(0.7rem, 3vw, 0.9rem);
+        }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <!-- Fixed Header -->
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/30 backdrop-blur-sm shadow-xl fixed top-0 z-40">
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wider">Card Generation</h1> 
+        <button onclick="goToDashboard()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-[1.02]">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+
+    <!-- Main Content Area -->
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-7xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl rounded-xl p-4 sm:p-8">
+            
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-bank-blue">Generate New Bank Card for User</h2>
+                <p class="text-gray-600 mt-1 text-sm sm:text-base">
+                    Generate card details (Card Number, Expiry) and preview the physical card design for **User Login ID**: 
+                    <strong id="user-id-display" class="font-mono text-bank-blue">N/A</strong>.
+                </p>
+            </header>
+
+            <!-- Responsive Layout: Stacks on mobile, 2 columns on large screens -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-y-10 lg:gap-x-10">
+                
+                <!-- 1. Card Details Input Form -->
+                <div class="lg:pr-10 order-2 lg:order-1">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Card Details Input</h3>
+                    <form id="cardForm" class="space-y-4">
+                        
+                        <div>
+                            <label for="userName" class="block text-sm font-medium text-gray-700">Card Holder Name</label>
+                            <input type="text" id="userName" placeholder="LOADING USER NAME..." maxlength="25" required 
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-bank-blue focus:border-bank-blue sm:text-sm uppercase tracking-wider disabled:bg-gray-100" disabled>
+                        </div>
+
+                        <div>
+                            <label for="cardNumber" class="block text-sm font-medium text-gray-700">Card Number (16 Digits)</label>
+                            <input type="text" id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" required 
+                                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-bank-blue focus:border-bank-blue sm:text-sm font-mono text-lg tracking-widest" readonly>
+                        </div>
+
+                        <!-- Responsive Grid for Expiry, CVV, and Generate Button -->
+                        <!-- Uses 2 columns on small screens, 3 on medium screens and up -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            <!-- Expiry Date -->
+                            <div>
+                                <label for="expiryDate" class="block text-sm font-medium text-gray-700">Expiration (MM/YY)</label>
+                                <input type="text" id="expiryDate" placeholder="01/26" maxlength="5" required 
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-bank-blue focus:border-bank-blue sm:text-sm font-mono text-lg" readonly>
+                            </div>
+                            <!-- CVV -->
+                            <div>
+                                <label for="cvv" class="block text-sm font-medium text-gray-700">CVV (3 Digits)</label>
+                                <input type="text" id="cvv" placeholder="123" maxlength="3" required 
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:ring-bank-blue focus:border-bank-blue sm:text-sm font-mono text-lg" readonly>
+                            </div>
+                            <!-- Generate Button - spans to ensure space on 2-col layout -->
+                            <div class="col-span-2 md:col-span-1 flex items-end">
+                                <button type="button" id="generateDetailsBtn"
+                                    class="w-full py-2 px-3 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition ease-in-out duration-150 disabled:opacity-50">
+                                    Generate
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="finaliseCardBtn" disabled
+                                class="w-full mt-6 py-3 px-4 border border-transparent rounded-lg shadow-lg text-base font-medium text-white bg-bank-blue hover:bg-bank-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bank-blue transition ease-in-out duration-150 disabled:opacity-50">
+                            Finalize and Save Card
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 2. Live Card Preview -->
+                <div class="flex flex-col items-center justify-center order-1 lg:order-2">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Live Card Preview</h3>
+                    
+                    <!-- Card Container - uses aspect-ratio for consistent scaling -->
+                    <div id="bankCard" class="w-full max-w-sm premium-card-bg rounded-xl shadow-2xl p-4 sm:p-6 flex flex-col justify-between transform transition-transform duration-300">
+                        
+                        <div class="flex justify-between items-start">
+                            <!-- Chip SVG -->
+                            <svg class="w-8 h-6 sm:w-10 sm:h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="2" y="5" width="20" height="14" rx="3" fill="#facc15"/>
+                                <rect x="5" y="8" width="14" height="8" rx="2" fill="#eab308"/>
+                                <path d="M12 9V15M15 12H9" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <!-- Bank Logo/Name -->
+                            <div class="flex items-center space-x-1 sm:space-x-2">
+                                <img src="https://i.imgur.com/Q6dsATF.png" alt="Sunflower Bank Logo" class="w-6 h-6 sm:w-8 sm:h-8"/>
+                                <div class="text-lg sm:text-xl font-bold tracking-widest text-white text-opacity-80">
+                                    SUNFLOWER
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Number Display -->
+                        <div id="displayCardNumber" class="font-mono text-center text-white card-number-display mt-4">
+                        #### #### #### ####
+                    </div>
+
+                        <!-- Card Holder Name and Expiry Date -->
+                        <div class="flex justify-between items-center text-white text-opacity-90 mt-4">
+                            <div class="flex flex-col">
+                                <span class="text-xs uppercase opacity-70">Card Holder</span>
+                                <span class="text-sm font-semibold tracking-wider uppercase" id="displayName">
+                                    USER NAME
+                                </span>
+                            </div>
+                            
+                            <div class="flex flex-col text-right">
+                                <span class="text-xs uppercase opacity-70">Expires</span>
+                                <span class="text-sm font-semibold font-mono" id="displayExpiry">
+                                    MM/YY
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-center text-sm text-gray-500">
+                        <span class="font-medium text-bank-blue">CVV:</span> <span id="displayCVV" class="font-mono tracking-widest">---</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Card Status Control Section - Improved responsiveness for mobile wrapping -->
+            <div class="mt-12 pt-6 border-t border-gray-200">
+                <h3 class="text-xl font-extrabold text-red-700 mb-4">Card Status Control (Admin)</h3>
+                <div class="p-4 sm:p-6 bg-gray-50 shadow-inner rounded-xl border border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between space-y-4 sm:space-y-0">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                        <span class="text-sm font-medium text-gray-700">Card Freeze Status:</span>
+                        <span id="card-status-label" class="font-bold text-lg text-gray-400">
+                            LOADING...
+                        </span>
+                    </div>
+                    
+                    <button id="toggle-freeze-btn" 
+                        onclick="handleCardFreezeToggle()"
+                        disabled
+                        class="w-full sm:w-auto px-6 py-2 rounded-lg shadow-md text-sm font-medium transition duration-150 ease-in-out bg-gray-400 text-white disabled:opacity-50 hover:shadow-lg">
+                        Load Status
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+ // <script>
+    // --- API ENDPOINT SIMULATION ---
+    const API_BASE_URL = '/api/users'; // Assuming user data is fetched here
+    // NEW ENDPOINT ASSUMPTION:
+    const CARD_STATUS_API_BASE_URL = '/api/cards';
+    const loginPage = 'admin-login.html'; 
+    const viewUserPage = 'view-user-account.html';
+
+    // Helper function for the Back button
+    window.goToDashboard = () => {
+        // You might want to go back to the list of users instead of the dashboard
+        // For this simulation, we'll go back one step in history or to a default page.
+        // window.history.back(); // Use this for a quick return
+        window.location.href = viewUserPage; 
+    }
+
+    // --- Custom Toast/Notification Function (Copied from provided file) ---
+    const showToast = (message, type = 'success') => {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max";
+        let iconSvg = '';
+
+        switch (type) {
+            case 'success':
+                baseClasses += " bg-green-500 text-white";
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'error':
+                baseClasses += " bg-red-600 text-white"; 
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'info':
+            default:
+                baseClasses += " bg-bank-blue text-white"; 
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+        }
+
+        toast.className = baseClasses + " transition transform duration-500 ease-out translate-x-full opacity-0";
+        toast.innerHTML = iconSvg + `<span>${message}</span>`;
+        
+        toastContainer.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full', 'opacity-0');
+            toast.classList.add('translate-x-0', 'opacity-100');
+        }, 10); 
+
+        // Animate out and remove
+        setTimeout(() => {
+            toast.classList.remove('translate-x-0', 'opacity-100');
+            toast.classList.add('translate-x-full', 'opacity-0');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+    };
+    
+    /**
+     * Helper function to get URL query parameters.
+     */
+    const getQueryParams = () => {
+        const params = {};
+        const queryString = window.location.search.substring(1);
+        const regex = /([^&=]+)=([^&]*)/g;
+        let m;
+        while (m = regex.exec(queryString)) {
+            params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+        }
+        return params;
+    }
+
+    // --- Card Details Generation Helpers ---
+
+    /** Generates a 16-digit pseudo-random card number (for frontend display) */
+    const generateCardNumber = () => {
+        let number = '';
+        // Bank Identification Number (BIN) prefix for example cards (e.g., 4 = Visa)
+        number += '4'; 
+        for (let i = 1; i < 16; i++) {
+            number += Math.floor(Math.random() * 10);
+        }
+        return number;
+    }
+
+    /** Generates an expiry date 3-6 years in the future */
+    const generateExpiryDate = () => {
+        const currentYear = new Date().getFullYear();
+        // Expiry is between 3 and 6 years from now
+        const expiryYear = currentYear + Math.floor(Math.random() * 4) + 3; 
+        const expiryMonth = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+        return `${expiryMonth}/${String(expiryYear).slice(2)}`;
+    }
+    
+    /** Generates a 3-digit CVV */
+    const generateCVV = () => {
+        return String(Math.floor(Math.random() * 900) + 100);
+    }
+
+    // --- Core Page Logic ---
+
+    let fetchedUserId = null; // Store the MongoDB ID (from the URL parameter 'id')
+    // SIMULATED CARD STATE: In a real app, this would be fetched from the API
+    let fetchedUserCard = {
+        id: 'card_id_123', // Assuming a card ID exists
+        isFrozen: false, 
+    };
+
+    const initializePage = async () => {
+        const params = getQueryParams();
+        // This 'userId' is the MongoDB document ID used for the API lookup
+        const userId = params.id; 
+        const token = localStorage.getItem('adminToken');
+
+        if (!token || !userId) {
+            showToast(`Missing token or user ID. Redirecting to user list.`, 'error');
+            setTimeout(() => { window.location.href = viewUserPage; }, 1500);
+            return;
+        }
+        
+        fetchedUserId = userId; // Store the MongoDB ID globally
+        document.getElementById('user-id-display').textContent = 'Loading...';
+        
+        const cardHolderNameInput = document.getElementById('userName'); 
+        
+        try {
+            // 🔥 REAL API CALL: GET /api/users/:id (Simulated)
+            // Using exponential backoff for a more robust API call simulation
+            const fetchWithRetry = async (url, options, maxRetries = 3) => {
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (response.status === 429 && i < maxRetries - 1) {
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            console.log(`Rate limit hit. Retrying in ${delay}ms...`);
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                        }
+                        return response;
+                    } catch (error) {
+                        if (i === maxRetries - 1) throw error;
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        console.log(`Fetch error. Retrying in ${delay}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            };
+
+            const response = await fetchWithRetry(`${API_BASE_URL}/${userId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const user = await response.json();
+            
+            // --- UPDATE: Display the user's login ID (userIdName) as per the schema ---
+            const loginId = user.userIdName || userId.substring(0, 12) + '... (DB ID)';
+            document.getElementById('user-id-display').textContent = loginId.toUpperCase();
+
+
+            // Pre-fill the user's FULL NAME (for the card holder name)
+            cardHolderNameInput.value = (user.fullName || 'UNKNOWN USER').toUpperCase();
+            cardHolderNameInput.disabled = false;
+            
+            // Initialize display name on card
+            document.getElementById('displayName').textContent = cardHolderNameInput.value;
+
+            // --- NEW: Correct Card Data Fetch and UI Update (FIXED HERE) ---
+            // Assuming your backend sends the card status (e.g., 'FROZEN' or 'ACTIVE')
+            // in the user object response as 'cardStatus'
+            const cardStatusFromServer = user.cardStatus || ''; 
+            
+            // FIX: Set the fetchedUserCard state based on the value from the API
+            fetchedUserCard.isFrozen = cardStatusFromServer.toUpperCase() === 'FROZEN';
+            
+            updateCardStatusUI(); // Call UI update to reflect the fetched state
+
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+            showToast(`Failed to load user data: ${error.message}. Name set to default.`, 'error');
+            
+            // Fallback for display
+            document.getElementById('user-id-display').textContent = userId.substring(0, 12) + '... (DB ID)';
+            cardHolderNameInput.value = "FALLBACK USER";
+            cardHolderNameInput.disabled = false;
+            document.getElementById('displayName').textContent = cardHolderNameInput.value;
+            updateCardStatusUI(); // Update UI even on error to show default/error state
+        }
+    };
+
+    const setupEventListeners = () => {
+        const cardForm = document.getElementById('cardForm');
+        const generateBtn = document.getElementById('generateDetailsBtn');
+        const finaliseBtn = document.getElementById('finaliseCardBtn');
+        
+        // Use consistent variable name: cardHolderNameInput
+        const cardHolderNameInput = document.getElementById('userName'); 
+        const cardNumberInput = document.getElementById('cardNumber');
+        const expiryDateInput = document.getElementById('expiryDate');
+        const cvvInput = document.getElementById('cvv');
+
+        const displayCardNumber = document.getElementById('displayCardNumber');
+        const displayName = document.getElementById('displayName');
+        const displayExpiry = document.getElementById('displayExpiry');
+        const displayCVV = document.getElementById('displayCVV');
+
+        // Listen for name changes in the input field to update the card in real-time
+        cardHolderNameInput.addEventListener('input', (e) => {
+            // Keep input value capitalized
+            e.target.value = e.target.value.toUpperCase();
+            // Truncate name display on card if too long for preview
+            let previewName = e.target.value;
+            if (previewName.length > 20) {
+                previewName = previewName.substring(0, 20) + '...';
+            }
+            displayName.textContent = previewName || 'USER NAME';
+        });
+
+
+        // --- Card Detail Generation ---
+        generateBtn.addEventListener('click', () => {
+            const newCardNumber = generateCardNumber();
+            const newExpiry = generateExpiryDate();
+            const newCvv = generateCVV();
+
+            // Format card number with spaces
+            cardNumberInput.value = newCardNumber.match(/.{1,4}/g).join(' ');
+            expiryDateInput.value = newExpiry;
+            cvvInput.value = newCvv;
+            
+            // Update the live preview
+            displayCardNumber.textContent = cardNumberInput.value;
+            displayExpiry.textContent = expiryDateInput.value;
+            displayCVV.textContent = newCvv;
+
+            finaliseBtn.disabled = false;
+            showToast('New card details generated and previewed.', 'success');
+        });
+        
+        // --- Finalization (Form Submission) ---
+        cardForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (finaliseBtn.disabled) {
+                showToast('Please generate card details first.', 'info');
+                return;
+            }
+
+            const token = localStorage.getItem('adminToken');
+            // Use the globally stored MongoDB ID
+            const userId = fetchedUserId; 
+
+            const cardData = {
+                userId: userId, // This is the MongoDB ID of the user
+                cardHolderName: cardHolderNameInput.value,
+                cardNumber: cardNumberInput.value.replace(/\s/g, ''), // Remove spaces for storage
+                expiryDate: expiryDateInput.value,
+                cvv: cvvInput.value,
+                // You might add cardType: 'Debit' or cardStatus: 'Active' here
+            };
+
+            // Disable button and show loading state
+            finaliseBtn.disabled = true;
+            finaliseBtn.textContent = 'Saving...';
+            
+            try {
+                // 🔥 REAL API CALL: POST /api/cards/generate (Simulated endpoint with retry)
+                const fetchWithRetry = async (url, options, maxRetries = 3) => {
+                    for (let i = 0; i < maxRetries; i++) {
+                        try {
+                            const response = await fetch(url, options);
+                            if (response.status === 429 && i < maxRetries - 1) {
+                                const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                continue;
+                            }
+                            if (!response.ok) {
+                                const errorData = await response.json().catch(() => ({}));
+                                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                            }
+                            return response;
+                        } catch (error) {
+                            if (i === maxRetries - 1) throw error;
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                        }
+                    }
+                };
+
+                const response = await fetchWithRetry('/api/cards/generate', { 
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify(cardData)
+                });
+
+                // Assuming the API returns the saved card object or a success message
+                const result = await response.json(); 
+                showToast(`Card successfully generated and linked to ${cardHolderNameInput.value}.`, 'success');
+
+            } catch (error) {
+                console.error("Error finalizing card:", error);
+                showToast(`Failed to save card. Reason: ${error.message || 'Network error.'}`, 'error');
+            } finally {
+                finaliseBtn.textContent = 'Finalize and Save Card';
+                finaliseBtn.disabled = false; // Re-enable for retry, though in a real app, you might redirect
+            }
+        });
+    };
+
+    // --- Card Management Functions ---
+
+    /**
+     * Updates the UI elements (label and button) based on the current card state.
+     */
+    function updateCardStatusUI() {
+        const statusLabel = document.getElementById('card-status-label');
+        const toggleBtn = document.getElementById('toggle-freeze-btn');
+
+        if (fetchedUserCard.isFrozen) {
+            statusLabel.textContent = 'FROZEN ❄️';
+            statusLabel.className = 'font-bold text-lg text-red-600';
+            toggleBtn.textContent = 'Unfreeze Card';
+            toggleBtn.classList.remove('bg-red-600', 'hover:bg-red-700', 'bg-gray-400');
+            toggleBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+        } else {
+            statusLabel.textContent = 'ACTIVE ✅';
+            statusLabel.className = 'font-bold text-lg text-green-600';
+            toggleBtn.textContent = 'Freeze Card';
+            toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-700', 'bg-gray-400');
+            toggleBtn.classList.add('bg-red-600', 'hover:bg-red-700');
+        }
+        toggleBtn.disabled = false; // Enable button once status is loaded/updated
+    }
+
+    /**
+     * Handles the click event to toggle the card's frozen status via API.
+     */
+    window.handleCardFreezeToggle = async () => {
+        const token = localStorage.getItem('adminToken');
+        const userId = fetchedUserId; 
+        
+        if (!token || !userId) {
+            showToast('Authentication error. Please log in again.', 'error');
+            return;
+        }
+        if (!fetchedUserCard.id) {
+            showToast('Cannot freeze/unfreeze: User has no generated card.', 'error');
+            return;
+        }
+
+        const currentStatus = fetchedUserCard.isFrozen;
+        const newStatus = !currentStatus;
+        const actionText = newStatus ? 'Freezing' : 'Unfreezing';
+        const toggleBtn = document.getElementById('toggle-freeze-btn');
+
+        // Set loading state
+        toggleBtn.disabled = true;
+        toggleBtn.textContent = `${actionText}...`;
+        showToast(`Attempting to ${actionText.toLowerCase()} card...`, 'info');
+
+        try {
+            // 🚀 API CALL: Update Card Status (Simulated endpoint with retry)
+            const fetchWithRetry = async (url, options, maxRetries = 3) => {
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        const response = await fetch(url, options);
+                        if (response.status === 429 && i < maxRetries - 1) {
+                            const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        }
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.message || `Failed to change card status. HTTP ${response.status}`);
+                        }
+                        return response;
+                    } catch (error) {
+                        if (i === maxRetries - 1) throw error;
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    }
+                }
+            };
+            
+            // The URL uses the user ID but the payload updates the card status linked to that user.
+            const response = await fetchWithRetry(`${CARD_STATUS_API_BASE_URL}/${userId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ isFrozen: newStatus })
+            });
+
+            const result = await response.json(); 
+
+            // Update local state with the new status from the API response
+            fetchedUserCard.isFrozen = newStatus; // Update based on success
+
+            // Update the UI
+            updateCardStatusUI(); 
+            
+            // ✅ FIX: Changed 'UNFREEZE' to 'UNFROZEN' for grammatical correctness
+            showToast(`Card successfully ${newStatus ? 'FROZEN' : 'UNFROZEN'}!`, 'success');
+
+        } catch (error) {
+            console.error("Card Freeze Toggle Error:", error);
+            showToast(`Failed to ${actionText.toLowerCase()} card: ${error.message || 'Network error.'}`, 'error');
+            
+            // Revert button to original state on failure (done by updateCardStatusUI)
+            updateCardStatusUI();
+        }
+    }
+
+
+    // --- Initial Load ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initializePage();
+        setupEventListeners();
+    });
+
+</script>
+</body>
+</html>

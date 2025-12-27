@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messages</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // TAILWIND CONFIGURATION
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bank-blue': '#0076a3',  // Deep Cyan/Teal
+                        'bank-yellow': '#ffc42a', // Vibrant Sunflower Yellow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Essential custom CSS for dynamic components */
+        .sidebar {
+            width: 280px; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-out;
+        }
+        .sidebar-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ffc42a; /* bank-yellow */
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col">
+    
+    <div id="message-box-container" class="hidden"></div>
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar" class="sidebar bg-white p-6 shadow-xl flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center pb-6 border-b border-gray-100">
+                <div class="flex items-center text-2xl font-bold text-bank-blue">
+                    <img src="https://placehold.co/30x30/0076a3/ffffff?text=SB" alt="Logo" class="mr-3 rounded-full">
+                    Menu
+                </div>
+                <button class="text-gray-500 hover:text-bank-blue transition p-1" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+            <ul class="pt-4 space-y-2">
+                <li>
+                    <a href="/client/user-dashboard.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                        Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/transfer.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                        Transfer Funds
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/profile.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                        Profile
+                    </a>
+                </li>
+                <li>
+                    <a href="/client/settings.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.827 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.827-3.31 2.37-2.37h.003z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <button id="sidebar-logout-button" class="flex items-center p-3 text-base font-medium text-red-600 rounded-lg hover:bg-red-50 transition duration-150 mt-4" onclick="handleLogout()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Log Out
+        </button>
+    </nav>
+    
+    <div class="absolute top-0 left-0 w-full h-40 bg-bank-blue z-0"></div>
+
+    <div class="relative z-10 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full flex-grow">
+
+        <header class="flex justify-between items-start mb-8 pt-2">
+            <div class="flex items-center space-x-4">
+                <button class="text-white cursor-pointer p-1 -ml-1 md:-ml-2" onclick="toggleSidebar()" aria-expanded="false" aria-controls="sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+                <div class="text-xl sm:text-2xl md:text-3xl font-semibold text-white mt-1">
+                    Your Messages
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 sm:space-x-4 pt-1">
+                <button onclick="handleLogout()" class="text-sm text-white/80 hover:text-white font-medium transition duration-150 p-2 rounded-lg hidden sm:block">
+                    Log Out
+                </button>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-bank-yellow flex items-center justify-center text-white font-bold text-lg overflow-hidden border-2 border-white shadow-md flex-shrink-0">
+                     <img src="https://placehold.co/48x48/ffc42a/0076a3?text=SB" alt="User Avatar" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+        
+        <main class="max-w-3xl mx-auto space-y-6">
+            
+            <a href="/client/user-dashboard.html" class="flex items-center text-bank-blue hover:text-bank-blue/80 font-medium transition mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                Back to Dashboard
+            </a>
+
+            <div id="announcement-message-card" class="hidden bg-white p-6 rounded-xl shadow-lg border-t-4 border-bank-yellow">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-bank-yellow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                    Important Announcement
+                </h2>
+                <div id="announcement-content" class="text-gray-600 space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <p>Loading message content...</p>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-lg space-y-4">
+                <h2 class="text-xl font-semibold text-gray-800">Your Bank Offers</h2>
+                <div class="border-l-4 border-bank-blue pl-4 py-3 bg-blue-50/50 rounded-md">
+                    <p class="font-medium text-gray-700">Upgrade your account!</p>
+                    <p class="text-sm text-gray-500 mt-1">Check out our new Platinum Account tier for higher limits and exclusive travel benefits.</p>
+                </div>
+                <div class="border-l-4 border-green-500 pl-4 py-3 bg-green-50/50 rounded-md">
+                    <p class="font-medium text-gray-700">Financial Wellness Tip 💡</p>
+                    <p class="text-sm text-gray-500 mt-1">Try setting up an automated weekly transfer into your savings account to meet your goals faster!</p>
+                </div>
+            </div>
+
+            <div id="loading-indicator" class="text-center p-12 text-bank-blue font-semibold">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading messages...</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="w-full p-4 bg-white shadow-inner mt-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-bank-blue text-white p-1 rounded font-mono">
+                    <p class="font-bold text-sm">SUNFLOWER</p><span class="text-xs ml-1"> Union </span>
+                </div>
+            </div>
+            <div class="text-center md:text-left space-y-1">
+                <p>Routing Number: 101130607 | Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Configuration: UPDATED TO USE THE DEDICATED MESSAGE ENDPOINT ---
+        const API_MESSAGES_URL = '/api/client/messages'; // <--- CHANGED
+        const SESSION_KEY_TOKEN = 'userToken'; 
+        const LOGIN_PAGE_URL = 'index.html'; 
+
+        // --- UI Utility Functions (Copied for consistency) ---
+
+        /** Toggles the mobile sidebar open or closed. */
+        function toggleSidebar(force) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            if (!sidebar || !backdrop) return;
+            
+            const isCurrentlyOpen = sidebar.classList.contains('open');
+            const shouldOpen = force === true || (force === undefined && !isCurrentlyOpen);
+
+            sidebar.classList.toggle('open', shouldOpen);
+            backdrop.classList.toggle('open', shouldOpen);
+        }
+
+        /** Hides the custom alert message. */
+        function hideMessage() {
+            const container = document.getElementById('message-box-container');
+            container.classList.add('hidden');
+            container.innerHTML = '';
+        }
+        
+        /** Displays a custom alert message in a modal-like box. */
+        function showMessage(message, title = 'Notification') {
+             const container = document.getElementById('message-box-container');
+             if (!container) return;
+
+             container.innerHTML = `
+                 <div class="message-box bg-white p-6 rounded-xl text-center">
+                     <h3 class="text-xl font-bold text-bank-blue mb-3">${title}</h3>
+                     <p class="text-gray-600">${message}</p>
+                     <button onclick="hideMessage()" class="mt-4 py-2 px-5 bg-bank-blue text-white rounded-lg transition hover:bg-bank-blue/80">Close</button>
+                 </div>
+                 <div class="sidebar-backdrop open"></div> 
+             `;
+             container.classList.remove('hidden');
+           }
+
+        /** Handles the logout process. */
+        function handleLogout(clearSession = true) {
+            console.log('Logging out...');
+            if (clearSession) {
+                sessionStorage.removeItem(SESSION_KEY_TOKEN); 
+                sessionStorage.removeItem('currentUserId');
+                sessionStorage.removeItem('currentUserName');
+            }
+            window.location.href = LOGIN_PAGE_URL;
+        }
+
+        // --- Core API Logic: UPDATED FUNCTION NAME AND API CALL ---
+
+        /**
+         * Checks for the token, redirects if unauthorized, or fetches data.
+         */
+        function initializeMessagesPage() {
+            const token = sessionStorage.getItem(SESSION_KEY_TOKEN);
+            
+            if (!token) {
+                console.error('No authentication token found. Redirecting to login.');
+                showMessage('Your session has expired. Please log in again.', 'Session Expired');
+                setTimeout(() => handleLogout(false), 2000); 
+                return;
+            }
+
+            fetchClientMessages(token); // <--- CHANGED
+        }
+
+        /**
+         * Fetches client messages from the dedicated backend API using the JWT.
+         * We now use the dedicated /api/client/messages endpoint.
+         */
+        async function fetchClientMessages(token) { // <--- CHANGED
+            const loadingIndicator = document.getElementById('loading-indicator');
+            loadingIndicator.classList.remove('hidden');
+
+            try {
+                const response = await fetch(API_MESSAGES_URL, { // <--- CHANGED
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    }
+                });
+
+                const responseJson = await response.json();
+                
+                // The dedicated endpoint returns { success: true, announcementMessage: { ... } } directly
+                if (response.ok && responseJson.success) {
+                    // Pass the entire responseJson as it directly contains the announcementMessage field
+                    renderMessages(responseJson); // <--- CHANGED: Passing responseJson directly
+                } else if (response.status === 401 || response.status === 403) {
+                    showMessage('Your session has expired. Please log in again.', 'Session Expired');
+                    setTimeout(() => handleLogout(true), 2000); 
+                } else {
+                    console.error('Server error:', responseJson.message);
+                    renderError(responseJson.message || 'Failed to load messages.');
+                }
+            } catch (error) {
+                console.error('Network or server connection error:', error);
+                renderError('Cannot connect to the bank server. Please check your network connection.');
+            } finally {
+                loadingIndicator.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Updates the DOM with the fetched user messages.
+         * @param {Object} data - The response data from the /api/client/messages API.
+         */
+        function renderMessages(data) { // <--- CHANGED: Expecting the full API response object
+            const announcementCard = document.getElementById('announcement-message-card');
+            const announcementContent = document.getElementById('announcement-content');
+
+            // 1. Render Announcement Message
+            // The message object is now directly on the 'data' argument, not under a 'data.data' or similar nest.
+            const annMessage = data.announcementMessage; // <--- CHANGED
+            
+            if (annMessage && annMessage.isActive && annMessage.messageContent) {
+                announcementContent.innerHTML = `<p>${annMessage.messageContent}</p>`;
+                announcementCard.classList.remove('hidden');
+            } else {
+                announcementCard.classList.add('hidden');
+                // Optional: Show a message that no announcements exist if the card is hidden
+                if (document.querySelector('main')) {
+                     const noMessageNote = document.createElement('div');
+                     noMessageNote.className = 'bg-white p-6 rounded-xl shadow-lg border-t-4 border-gray-300';
+                     noMessageNote.innerHTML = '<p class="text-gray-500 font-medium">No new announcements at this time.</p>';
+                     document.querySelector('main').insertBefore(noMessageNote, announcementCard.nextSibling);
+                 }
+            }
+
+            // 2. Placeholder for other message types (currently hardcoded)
+        }
+
+        /**
+         * Renders an error message to the user.
+         */
+        function renderError(message) {
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.innerHTML = `
+                    <div class="p-10 text-center bg-red-100 border border-red-400 rounded-xl max-w-lg mx-auto mt-10">
+                        <h2 class="text-xl font-bold text-red-700 mb-2">Error Loading Data</h2>
+                        <p class="text-red-600">${message}</p>
+                        <a href="/client/user-dashboard.html" class="mt-4 inline-block text-bank-blue hover:text-bank-blue/80 font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+                            Go back to Dashboard
+                        </a>
+                    </div>
+                `;
+            }
+        }
+
+        // --- Event Listeners and Initialization ---
+
+        // Make utility functions globally accessible to inline HTML handlers
+        window.toggleSidebar = toggleSidebar;
+        window.handleLogout = handleLogout;
+        window.showMessage = showMessage;
+        window.hideMessage = hideMessage;
+
+        // Run the initialization function when the page loads
+        document.addEventListener('DOMContentLoaded', initializeMessagesPage);
+    </script>
+</body>
+</html>

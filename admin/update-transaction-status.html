@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Transaction Status - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Custom banking blue for branding consistency
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', 
+                            dark: '#005f82', 
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Background (using the image and overlay) */
+        .banking-bg {
+            background-image: url('https://placehold.co/1920x1080/000000/ffffff?text=Secure+Banking+Admin');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Dark overlay for better contrast */
+            background-color: rgba(0, 0, 0, 0.5); 
+            background-blend-mode: overlay;
+        }
+        
+        /* Custom scrollbar for table container */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+            width: 8px; /* Added width for vertical scrollbar visibility */
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background-color: #9ca3af;
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background-color: #f9fafb;
+        }
+        
+        /* 1. STICKY HEADER: Top is 0 relative to the scroll container */
+        .table-container thead th {
+            position: sticky;
+            top: 0;
+            z-index: 20; /* Higher than sticky ID body cells */
+            background-color: #f3f4f6; /* matches bg-gray-100 */
+        }
+
+        /* 2. STICKY COLUMN FOR TRANSACTION ID */
+        /* Make the header cell for ID sticky too, and match the sticky header background */
+        .table-container thead th.sticky-id-header {
+            left: 0;
+            z-index: 30; /* Highest to overlap other headers */
+            background-color: #f3f4f6; /* matches bg-gray-100 */
+        }
+        
+        .table-container tbody .sticky-id {
+            position: sticky;
+            left: 0;
+            z-index: 10; /* Lower than header */
+            box-shadow: 2px 0 3px -1px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+        }
+        
+        /* Ensure sticky ID background matches row background on hover/non-hover */
+        .table-container tbody tr:nth-child(even) .sticky-id {
+            background-color: #f9fafb; /* bg-gray-50 */
+        }
+        .table-container tbody tr:nth-child(odd) .sticky-id {
+            background-color: #ffffff; /* bg-white */
+        }
+        .table-container tbody tr:hover .sticky-id {
+            background-color: #f3f4f6; /* bg-gray-100 */
+        }
+
+        /* MOBILE ENHANCEMENT: Smaller padding for table cells on all screens, adjusting at sm */
+        .table-container td, .table-container th {
+            padding-top: 0.75rem; /* py-3 */
+            padding-bottom: 0.75rem; /* py-3 */
+            padding-left: 0.5rem; /* px-2 for tighter spacing on mobile */
+            padding-right: 0.5rem; /* px-2 */
+        }
+        
+        @media (min-width: 640px) { /* sm: breakpoint */
+            .table-container td, .table-container th {
+                padding-left: 0.75rem; /* px-3 */
+                padding-right: 0.75rem; /* px-3 */
+            }
+        }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <!-- Fixed Header -->
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/40 backdrop-blur-sm shadow-xl fixed top-0 z-40">
+        <h1 class="text-lg sm:text-2xl font-bold text-white tracking-wider">Transaction Status Manager</h1> 
+        <button onclick="goToUserList()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400">
+            &larr; Back to Users
+        </button>
+    </header>
+
+    <!-- Toast/Notification Container -->
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-screen-xl 2xl:max-w-screen-2xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl rounded-xl p-4 sm:p-8">
+            
+            <header class="mb-6 border-b pb-4">
+                <h2 class="text-xl sm:text-2xl font-extrabold text-bank-blue">User Transaction Status</h2>
+                <p class="text-gray-600 mt-1 text-xs sm:text-sm">
+                    Manage the status of transactions for user ID: <strong id="display-user-id" class="text-bank-blue-dark">Loading...</strong>
+                </p>
+                <p id="user-info-text" class="text-xs sm:text-sm font-medium text-gray-800"></p>
+            </header>
+
+            <!-- Filter Section (Responsive stacking on small screens) -->
+            <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <label for="status-filter" class="text-sm font-medium text-gray-700 w-full sm:w-auto">Filter by Status:</label>
+                <select id="status-filter" onchange="filterTransactions()" class="w-full sm:w-auto sm:max-w-xs block px-3 py-2 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-bank-blue focus:border-bank-blue text-sm transition duration-150">
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Successful">Successful</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Refunded">Refunded</option>
+                    <option value="Failed">Failed</option>
+                    <option value="Declined">Declined</option>
+                </select>
+            </div>
+
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="text-center p-12 text-bank-blue font-semibold">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 text-bank-blue mr-3" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Fetching User Transactions...</span>
+            </div>
+            </div>
+
+            <!-- Transaction Table Container (Handles horizontal scroll on small screens) -->
+            <div id="table-container" class="overflow-x-auto table-container rounded-lg border hidden">
+                <table class="min-w-full divide-y divide-gray-200 w-full table-auto"> 
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <!-- Sticky ID Column Header -->
+                            <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[70px] lg:min-w-[90px] sticky-id-header">ID</th>
+                            <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px] lg:min-w-[150px]">Date/Account</th>
+                            <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px] lg:min-w-[200px]">Description</th>
+                            <th class="py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px] lg:min-w-[120px]">Amount</th>
+                            <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[90px] lg:min-w-[120px]">Status</th>
+                            <th class="py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[100px] lg:min-w-[120px]">Action</th> 
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-table-body" class="bg-white divide-y divide-gray-200">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- No Transactions Message -->
+            <p id="no-transactions-message" class="hidden text-center p-12 text-gray-500 italic">No transactions found for this user, or the list is empty after filtering.</p>
+
+        </div>
+    </main>
+
+    <!-- Status Update Modal -->
+    <div id="status-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-50 transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-xs sm:max-w-sm transform transition-all duration-300 scale-100">
+            <h3 class="text-xl font-bold text-bank-blue mb-4">Update Transaction Status </h3>
+            <p class="text-gray-700 mb-4 text-sm">Update transaction <strong id="modal-transaction-id-display">...</strong> to a new status:</p>
+
+            <form id="status-update-form" onsubmit="event.preventDefault(); confirmStatusUpdate()">
+                <input type="hidden" id="modal-transaction-id">
+                <div class="mb-6">
+                    <label for="new-status" class="block text-sm font-medium text-gray-700 mb-1">Select New Status</label>
+                    <select id="new-status" name="new-status" required 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-bank-blue focus:border-bank-blue transition duration-150">
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Successful">Successful</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Refunded">Refunded</option>
+                        <option value="Failed">Failed</option>
+                        <option value="Declined">Declined</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-3">
+                    <button type="button" onclick="hideStatusModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-150">
+                        Cancel
+                    </button>
+                    <button type="submit" id="confirm-status-btn" class="px-4 py-2 text-sm font-medium text-white bg-bank-blue rounded-lg hover:bg-bank-blue-dark transition duration-150 shadow-md">
+                        Save Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+<script>
+    // --- API ENDPOINT SIMULATION (Replace with your actual Node.js API URLs) ---
+    const TRANSACTIONS_API_BASE_URL = '/api/transactions'; 
+    const USERS_API_BASE_URL = '/api/users';
+    const loginPage = 'admin-login.html'; 
+    const userListPage = 'view-user-account.html'; 
+
+    let allTransactions = []; // Store all fetched transactions globally
+    let currentUserId = null;
+    let currentUserName = "Unknown User";
+    let currentUserEmail = "N/A"; // Store user email for display/reference
+
+    // Helper function for navigation
+    window.goToUserList = () => {
+        window.location.href = userListPage; 
+    }
+
+    /**
+     * Clears local storage and redirects to the login page.
+     */
+    const logoutAndRedirect = () => {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminName');
+        showToast('Session expired or unauthorized. Please log in again.', 'error');
+        setTimeout(() => { window.location.href = loginPage; }, 1500);
+    }
+
+    // --- Custom Toast/Notification Function ---
+    const showToast = (message, type = 'success') => {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        
+        let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max opacity-0 transition-all duration-500 ease-out transform translate-x-full";
+        let iconSvg = '';
+
+        switch (type) {
+            case 'success':
+                baseClasses += " bg-green-500 text-white";
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'error':
+                baseClasses += " bg-red-600 text-white"; 
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'info':
+            default:
+                baseClasses += " bg-bank-blue text-white"; 
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+        }
+
+        const toastElement = document.createElement('div');
+        toastElement.className = baseClasses;
+        toastElement.innerHTML = iconSvg + `<span>${message}</span>`;
+        
+        toastContainer.appendChild(toastElement);
+
+        // Animate in
+        setTimeout(() => {
+            toastElement.classList.remove('translate-x-full', 'opacity-0');
+        }, 10); 
+
+        // Animate out and remove
+        setTimeout(() => {
+            toastElement.classList.add('translate-x-full', 'opacity-0');
+            const removeToast = () => {
+                toastElement.removeEventListener('transitionend', removeToast);
+                toastElement.remove();
+            };
+            toastElement.addEventListener('transitionend', removeToast);
+        }, 3000);
+    };
+    
+    // Helper function to format currency
+    const formatCurrency = (amount, currencyCode) => {
+        try {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: currencyCode || 'USD',
+                minimumFractionDigits: 2,
+            }).format(amount);
+        } catch (e) {
+            return `${currencyCode || ''} ${amount ? amount.toFixed(2) : '0.00'}`;
+        }
+    };
+
+    // Helper function to get status badge class
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'Successful':
+            case 'Approved':
+            case 'Delivered':
+                return 'bg-green-100 text-green-800';
+            case 'Pending':
+            case 'Processing':
+                return 'bg-yellow-100 text-yellow-800';
+            case 'Failed':
+            case 'Declined':
+                return 'bg-red-100 text-red-800';
+            case 'Refunded':
+                return 'bg-indigo-100 text-indigo-800';
+            default:
+                return 'bg-gray-100 text-gray-800';
+        }
+    }
+    
+    // --- Core User Info Fetching ---
+
+    /**
+     * Fetches user's full name and email to display on the page header.
+     */
+    const fetchUserInfo = async (userId, token) => {
+        try {
+            const response = await fetch(`${USERS_API_BASE_URL}/${userId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user info: HTTP status ${response.status}`);
+            }
+
+            const user = await response.json();
+            currentUserName = user.fullName || "User Account";
+            currentUserEmail = user.email || "Email N/A"; 
+            
+            // Display both name and email
+            document.getElementById('user-info-text').innerHTML = 
+                `Full Name: <strong class="text-gray-900">${currentUserName}</strong> | Email: <strong class="text-gray-900">${currentUserEmail}</strong>`;
+
+        } catch (error) {
+            console.error("Error fetching user info:", error);
+            document.getElementById('user-info-text').textContent = `Failed to load user name/email.`;
+        }
+    };
+
+
+    // --- Core Transaction Listing and Rendering ---
+
+    /**
+     * Renders the filtered transactions into the table body.
+     */
+    window.filterTransactions = () => {
+        const filterValue = document.getElementById('status-filter').value;
+        const tableBody = document.getElementById('transaction-table-body');
+        const noTransactionsMessage = document.getElementById('no-transactions-message');
+        
+        tableBody.innerHTML = ''; 
+
+        const filteredTransactions = allTransactions.filter(tx => 
+            filterValue === 'All' || tx.status === filterValue
+        );
+
+        if (filteredTransactions.length === 0) {
+            noTransactionsMessage.classList.remove('hidden');
+            document.getElementById('table-container').classList.add('hidden'); // Hide table if empty
+            return;
+        } else {
+            noTransactionsMessage.classList.add('hidden');
+            document.getElementById('table-container').classList.remove('hidden'); // Show table if populated
+        }
+
+        // Sort by date/timestamp, newest first
+        filteredTransactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+
+        filteredTransactions.forEach((tx, index) => {
+            const row = document.createElement('tr');
+            row.className = index % 2 === 0 
+                ? 'bg-white transition duration-150 ease-in-out hover:bg-gray-100' 
+                : 'bg-gray-50 transition duration-150 ease-in-out hover:bg-gray-100';
+
+            const statusClass = getStatusClass(tx.status);
+            const txId = tx._id;
+            
+            // Format amount with appropriate sign
+            const amountText = formatCurrency(tx.amount || 0, tx.currency || 'USD');
+            
+            // Amount is green for positive (credit) and red for negative (debit)
+            const amountClass = (tx.amount < 0) ? 'text-red-600' : 'text-green-600'; 
+
+            // --- ACCOUNT ID DISPLAY LOGIC ---
+            const accountId = tx.accountNumber || 'N/A'; 
+            // Display only the last 4 digits on small screens
+            const accountIdDisplay = accountId !== 'N/A' && accountId.length > 4
+                ? '...'+ accountId.slice(-4) 
+                : accountId;
+            // ------------------------------------------
+
+            row.innerHTML = `
+                <td class="py-3 whitespace-nowrap text-xs text-gray-900 font-mono sticky-id">
+                    ${txId ? txId.substring(0, 8) : 'N/A'}...
+                </td>
+                <td class="py-3 text-xs sm:text-sm font-medium text-gray-900">
+                    ${new Date(tx.timestamp).toLocaleDateString()}
+                    <span class="block text-[10px] sm:text-xs text-gray-500 font-normal" title="Full Account Number: ${tx.accountNumber}">Acct: ${accountIdDisplay}</span>
+                </td>
+                <td class="py-3 text-xs sm:text-sm text-gray-700 max-w-xs whitespace-normal">
+                    ${tx.description || 'No description'}
+                </td>
+                <td class="py-3 text-xs sm:text-sm font-semibold text-right font-mono ${amountClass}">
+                    ${amountText}
+                </td>
+                <td class="py-3 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                        ${tx.status || 'Unknown'}
+                    </span>
+                </td>
+                <td class="py-3 text-center text-sm font-medium whitespace-nowrap">
+                    <button onclick="showStatusModal('${txId}', '${tx.status}')" 
+                        class="text-white bg-bank-blue hover:bg-bank-blue-dark font-medium py-1 px-2 text-xs rounded-lg transition duration-150 shadow-md transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-bank-blue-dark">
+                        Update
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    };
+
+    /**
+     * Fetches all transactions for the current user from the API.
+     */
+    window.fetchTransactions = async () => {
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const tableContainer = document.getElementById('table-container');
+        const token = localStorage.getItem('adminToken'); // Get the JWT
+
+        if (!token || !currentUserId) {
+            logoutAndRedirect();
+            return;
+        }
+        
+        loadingIndicator.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+        document.getElementById('transaction-table-body').innerHTML = '';
+
+        try {
+            // 🔥 REAL API CALL: GET /api/transactions/user/:userId
+            const response = await fetch(`${TRANSACTIONS_API_BASE_URL}/user/${currentUserId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}` 
+                },
+            });
+            
+            if (response.status === 401 || response.status === 403) {
+                logoutAndRedirect();
+                return;
+            }
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            allTransactions = Array.isArray(data.transactions) ? data.transactions : []; // Ensure it's an array
+
+            showToast(`Loaded ${allTransactions.length} transactions for ${currentUserName}.`, 'info');
+            
+            filterTransactions(); // Render the fetched data
+
+        } catch (error) {
+            console.error("Error fetching transactions:", error);
+            showToast(`Failed to load transactions. Reason: ${error.message || 'Network error.'}`, 'error');
+            filterTransactions(); // Render empty table/message
+
+        } finally {
+            loadingIndicator.classList.add('hidden');
+        }
+    };
+    
+    // --- Status Update Modal Logic ---
+    
+    window.showStatusModal = (txId, currentStatus) => {
+        document.getElementById('modal-transaction-id').value = txId;
+        document.getElementById('modal-transaction-id-display').textContent = txId.substring(0, 10) + '...';
+        
+        // Set the current status as selected
+        const newStatusSelect = document.getElementById('new-status');
+        const options = Array.from(newStatusSelect.options).map(opt => opt.value);
+        newStatusSelect.value = options.includes(currentStatus) ? currentStatus : options[0]; 
+
+        const modal = document.getElementById('status-modal');
+        modal.classList.remove('hidden');
+        // Animate modal in
+        setTimeout(() => {
+             modal.style.opacity = '1';
+             modal.querySelector('div').style.transform = 'scale(1)';
+        }, 10);
+    }
+
+    window.hideStatusModal = () => {
+        const modal = document.getElementById('status-modal');
+        // Animate modal out
+        modal.style.opacity = '0';
+        modal.querySelector('div').style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 300); // Matches transition duration
+    }
+
+    /**
+     * Handles the submission from the modal to update the transaction status.
+     */
+    window.confirmStatusUpdate = async () => {
+        const txIdToUpdate = document.getElementById('modal-transaction-id').value;
+        const newStatus = document.getElementById('new-status').value;
+
+        if (!txIdToUpdate || !newStatus) return;
+
+        hideStatusModal(); // Hide modal immediately
+        showToast(`Updating status for transaction ID ${txIdToUpdate.substring(0, 8)}... to ${newStatus}`, 'info');
+
+        const confirmBtn = document.getElementById('confirm-status-btn');
+        confirmBtn.disabled = true;
+
+        // Exponential Backoff implementation for retries
+        const maxRetries = 3;
+        let currentRetry = 0;
+
+        const executeUpdate = async () => {
+            const token = localStorage.getItem('adminToken'); 
+            if (!token) { logoutAndRedirect(); return; }
+
+            // 🔥 REAL API CALL: PUT /api/transactions/:transactionId/status
+            const response = await fetch(`${TRANSACTIONS_API_BASE_URL}/${txIdToUpdate}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: JSON.stringify({ newStatus: newStatus }),
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                logoutAndRedirect();
+                return;
+            }
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+
+                if (response.status >= 500 && currentRetry < maxRetries) {
+                    console.error(`❌ Server Error (${response.status}) on Status Update API:`, errorData);
+                    throw new Error("Server error, attempting retry..."); // Trigger retry logic
+                }
+                
+                throw new Error(errorData.message || `API failed with status ${response.status}. The server returned an empty or generic error.`);
+            }
+            
+            return response.json();
+        }
+
+        while (currentRetry < maxRetries) {
+            try {
+                const result = await executeUpdate();
+                
+                // Re-fetch all data to update the table immediately
+                await fetchTransactions(); 
+                
+                showToast(result.message || `Transaction ${txIdToUpdate.substring(0, 8)}... status updated to ${newStatus}. Notification sent to user!`, 'success');
+                break; // Exit loop on success
+
+            } catch (error) {
+                currentRetry++;
+                if (currentRetry >= maxRetries) {
+                    console.error("Error updating transaction status after all retries:", error);
+                    showToast(`Failed to update status. Reason: ${error.message || 'Check console.'}`, 'error');
+                } else {
+                    // Exponential backoff: 1s, 2s, 4s delay
+                    const delay = Math.pow(2, currentRetry - 1) * 1000;
+                    // Do not log retries to console, just inform the user via toast
+                    showToast(`Update failed (${error.message}). Retrying in ${delay / 1000}s...`, 'error');
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                }
+            }
+        }
+        
+        confirmBtn.disabled = false;
+    };
+
+    // ----------------------------------------------------------------------
+    // --- INITIALIZATION ON LOAD ---
+    // ----------------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('adminToken');
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('id');
+
+        // 1. Check Auth and User ID
+        if (!token) {
+            console.warn("No admin token found. Redirecting to login.");
+            logoutAndRedirect();
+            return; 
+        }
+        if (!userId) {
+            showToast("Error: No User ID provided in the URL. Redirecting to user list.", 'error');
+            setTimeout(() => { window.location.href = userListPage; }, 2000);
+            return; 
+        }
+        
+        currentUserId = userId;
+        document.getElementById('display-user-id').textContent = userId;
+
+        // 2. Fetch User Info and Transactions
+        fetchUserInfo(userId, token).then(() => {
+            fetchTransactions(); 
+        });
+    });
+
+</script>
+</body>
+</html>

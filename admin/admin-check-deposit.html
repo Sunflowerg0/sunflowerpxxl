@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Deposit Management - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind Configuration with Bank Theme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', // Primary blue
+                            dark: '#005f82',    // Darker hover blue
+                        },
+                        'deposit-status': {
+                            // Mapped to the CSS in the <style> block
+                            'pending': '#ffc107',
+                            'processing': '#007bff',
+                            'hold': '#9966cc', // New color for Hold
+                            'failed': '#dc3545',
+                            'declined': '#6c757d',
+                            'completed': '#28a745' // Used for Approved
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght%40100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Background (using the image and overlay) */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Dark overlay for better contrast */
+            background-color: rgba(0, 0, 0, 0.5); 
+            background-blend-mode: overlay;
+        }
+
+        /* Styling for the Status Badges/Tags */
+        .status-badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending { background-color: #ffc107; color: #343a40; }
+        .status-badge.processing { background-color: #007bff; color: white; }
+        .status-badge.hold { background-color: #9966cc; color: white; } /* New Hold Style */
+        .status-badge.failed { background-color: #dc3545; color: white; }
+        .status-badge.declined { background-color: #6c757d; color: white; }
+        .status-badge.completed { background-color: #28a745; color: white; }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/40 backdrop-blur-sm shadow-xl fixed top-0 z-40">
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wider">Check Deposit Management</h1> 
+        <button onclick="goToUserManagement()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-md text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-105">
+            &larr; Back to Users
+        </button>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-6xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl rounded-xl p-4 sm:p-8">
+            
+            <header class="mb-6 border-b pb-4">
+                <h2 class="text-2xl font-extrabold text-bank-blue">Manage Check Deposit</h2>
+                <p class="text-gray-600 mt-1 text-sm">
+                    Review and update the status for deposit ID: 
+                    <span id="deposit-id-display" class="font-mono text-xs bg-gray-100 p-1 rounded">Loading...</span>
+                </p>
+                <p id="user-info-display" class="text-lg font-semibold mt-2 text-gray-800">
+                    User: Loading... | Amount: Loading...
+                </p>
+            </header>
+
+            <div id="loading-indicator" class="text-center p-12 text-bank-blue font-semibold">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading Deposit Data...</span>
+                </div>
+            </div>
+
+            <div id="deposit-container" class="space-y-8 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="p-6 bg-gray-50 rounded-lg shadow-md border border-gray-200">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-3">Current Deposit Status</h3>
+                            <div id="current-status-display" class="text-2xl font-bold">
+                                <span class="status-badge pending" id="status-badge-text">Pending</span>
+                            </div>
+                            <p class="text-sm text-gray-500 mt-2">Last updated: <span id="last-updated-date">N/A</span></p>
+                        </div>
+                        
+                        <div class="p-6 bg-white rounded-lg shadow-xl border-2 border-bank-blue/50">
+                            <h3 class="text-xl font-bold text-bank-blue mb-4">Update Deposit Status</h3>
+                            <form id="status-update-form" class="space-y-4">
+                                
+                                <div>
+                                    <label for="deposit-status-select" class="block text-sm font-medium text-gray-700 mb-1">New Status</label>
+                                    <select id="deposit-status-select" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2.5 border bg-white">
+                                        <option value="pending">Pending (Awaiting Review)</option>
+                                        <option value="processing">Processing (In Progress)</option>
+                                        <option value="hold">On Hold</option>
+                                        <option value="completed">Approved (Funds Available)</option>
+                                        <option value="declined">Rejected</option>
+                                        <option value="failed">Failed (System Error)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="admin-notes" class="block text-sm font-medium text-gray-700 mb-1">Admin Notes (Required for Rejected/Failed)</label>
+                                    <textarea id="admin-notes" rows="3" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-3 border resize-none"
+                                        placeholder="Enter reason for status change, particularly for rejections or failures."></textarea>
+                                </div>
+                                
+                                <button type="submit" id="save-status-button" 
+                                    class="w-full bg-bank-blue text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-bank-blue-dark transition duration-150 ease-in-out shadow-md text-base disabled:bg-gray-400">
+                                    <span id="status-button-text">Save New Status</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-2 space-y-6">
+                        <h3 class="text-xl font-bold text-gray-800 border-b pb-2">Check Image Review</h3>
+                        
+                        <div class="p-4 bg-gray-100 rounded-lg shadow-inner border">
+                            <h4 class="font-semibold text-gray-700 mb-2">Front of Check:</h4>
+                            <img id="check-front-image" 
+                                src="https://via.placeholder.com/800x450?text=No+Front+Image+Found" 
+                                alt="Front of Check" 
+                                class="w-full h-auto object-contain rounded-md shadow-lg cursor-pointer transition hover:scale-[1.01]"
+                                onclick="openImageModal(this.src)">
+                            <p id="front-image-status" class="text-center text-sm text-gray-500 mt-2">Loading image...</p>
+                        </div>
+
+                        <div class="p-4 bg-gray-100 rounded-lg shadow-inner border">
+                            <h4 class="font-semibold text-gray-700 mb-2">Back of Check (Endorsed):</h4>
+                            <img id="check-back-image" 
+                                src="https://via.placeholder.com/800x450?text=No+Back+Image+Found" 
+                                alt="Back of Check" 
+                                class="w-full h-auto object-contain rounded-md shadow-lg cursor-pointer transition hover:scale-[1.01]"
+                                onclick="openImageModal(this.src)">
+                            <p id="back-image-status" class="text-center text-sm text-gray-500 mt-2">Loading image...</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div id="image-modal" class="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center hidden" onclick="closeImageModal()">
+                <div class="relative max-w-5xl max-h-5xl p-4" onclick="event.stopPropagation()">
+                    <img id="modal-image" src="" alt="Zoomed Check Image" class="max-w-full max-h-[90vh] object-contain rounded-lg">
+                    <button class="absolute top-4 right-4 text-white text-3xl font-bold p-2 leading-none hover:text-red-400 transition" onclick="closeImageModal()">&times;</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+
+    <script>
+        // --- CONFIGURATION & GLOBALS ---
+        // New API endpoint for managing check deposits
+        const API_DEPOSITS_URL = '/api/check-deposits'; 
+        const userManagementPage = 'view-user-account.html'; // Placeholder redirect
+        const loginPage = 'admin-login.html'; // Placeholder redirect
+        let depositId = null;
+
+        // --- Utility Functions (Copied/Modified from original) ---
+
+        const logoutAndRedirect = () => {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminName');
+            showToast('Session expired or unauthorized. Please log in again.', 'error');
+            setTimeout(() => { window.location.href = loginPage; }, 1500);
+        }
+
+        window.goToUserManagement = () => {
+             window.location.href = userManagementPage; 
+        }
+
+        // --- Custom Toast/Notification Function ---
+        const showToast = (message, type = 'success') => {
+            const toastContainer = document.getElementById('toast-container');
+            const toastElement = document.createElement('div');
+            
+            let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max opacity-0 transition-all duration-500 ease-out transform translate-x-full";
+            let iconSvg = '';
+
+            switch (type) {
+                case 'success':
+                    baseClasses += " bg-green-500 text-white";
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'error':
+                    baseClasses += " bg-red-600 text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'info':
+                default:
+                    baseClasses += " bg-bank-blue text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+            }
+            
+            toastElement.className = baseClasses;
+            toastElement.innerHTML = iconSvg + `<span>${message}</span>`;
+            
+            toastContainer.appendChild(toastElement);
+
+            // Animate in
+            setTimeout(() => {
+                toastElement.classList.remove('translate-x-full', 'opacity-0');
+            }, 10); 
+
+            // Animate out and remove
+            setTimeout(() => {
+                toastElement.classList.add('translate-x-full', 'opacity-0');
+                const removeToast = () => {
+                    toastElement.removeEventListener('transitionend', removeToast);
+                    toastElement.remove();
+                };
+                toastElement.addEventListener('transitionend', removeToast);
+            }, 3000);
+        };
+        
+        // --- Modal Functions ---
+        const imageModal = document.getElementById('image-modal');
+        const modalImage = document.getElementById('modal-image');
+
+        window.openImageModal = (src) => {
+            // Do not open the modal if the source is the placeholder
+            if (src.includes('No+Front+Image+Found') || src.includes('No+Back+Image+Found')) return;
+            modalImage.src = src;
+            imageModal.classList.remove('hidden');
+        };
+
+        window.closeImageModal = () => {
+            imageModal.classList.add('hidden');
+        };
+
+        // --- Data Fetching and Initialization ---
+
+        /**
+         * Parses the query string to get the deposit ID.
+         * @returns {string|null} The deposit ID or null.
+         */
+        const getDepositIdFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            // The key is 'depositId' 
+            return params.get('depositId'); 
+        }
+
+        /**
+         * Formats the status string for display.
+         * @param {string} status - The raw status string.
+         * @returns {string} The HTML for the status badge.
+         */
+        const formatStatusBadge = (status) => {
+            const normalizedStatus = status ? status.toLowerCase() : 'pending';
+            
+            let statusText = normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1);
+            let colorClass = '';
+            
+            // Map the value to the correct class and display text
+            switch (normalizedStatus) {
+                case 'pending':
+                    colorClass = 'pending';
+                    statusText = 'PENDING';
+                    break;
+                case 'processing':
+                    colorClass = 'processing';
+                    statusText = 'PROCESSING';
+                    break;
+                case 'hold': // NEW
+                    colorClass = 'hold';
+                    statusText = 'ON HOLD';
+                    break;
+                case 'completed': // Mapped to "Approved"
+                    colorClass = 'completed';
+                    statusText = 'APPROVED';
+                    break;
+                case 'failed':
+                    colorClass = 'failed';
+                    statusText = 'FAILED';
+                    break;
+                case 'declined': // Mapped to "Rejected"
+                    colorClass = 'declined';
+                    statusText = 'REJECTED';
+                    break;
+                default:
+                    colorClass = 'pending';
+                    statusText = 'UNKNOWN';
+            }
+
+            return `<span class="status-badge ${colorClass}" id="status-badge-text">${statusText}</span>`;
+        };
+
+        /**
+         * Fetches check deposit details (SIMULATION).
+         */
+        const fetchDepositDetails = async () => {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const depositContainer = document.getElementById('deposit-container');
+            const depositIdDisplay = document.getElementById('deposit-id-display');
+            const userInfoDisplay = document.getElementById('user-info-display');
+            const token = localStorage.getItem('adminToken');
+
+            if (!token || !depositId) {
+                logoutAndRedirect();
+                return;
+            }
+            
+            loadingIndicator.classList.remove('hidden');
+            depositContainer.classList.add('hidden');
+
+            try {
+                // --- MOCK API CALL SIMULATION ---
+                await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network delay
+                
+                // Mock Data based on ID for a realistic feel
+                const mockData = {
+                    'DEP-1001': {
+                        userId: 'U-7890', username: 'Alice Johnson', amount: 450.75, 
+                        status: 'pending', adminNotes: '', createdAt: new Date(Date.now() - 3600000), updatedAt: new Date(Date.now() - 300000),
+                        imageFrontUrl: 'https://via.placeholder.com/800x450/0076a3/ffffff?text=CHECK+FRONT+%24450.75', 
+                        imageBackUrl: 'https://via.placeholder.com/800x450/ffc42a/000000?text=ENDORSED+For+Mobile+Deposit+Only'
+                    },
+                    'DEP-1002': {
+                        userId: 'U-1234', username: 'Bob Smith', amount: 1200.00, 
+                        status: 'completed', adminNotes: 'Approved and cleared on first review.', createdAt: new Date(Date.now() - 86400000), updatedAt: new Date(Date.now() - 80000000),
+                        imageFrontUrl: 'https://via.placeholder.com/800x450/28a745/ffffff?text=CHECK+FRONT+%241200.00+-+CLEARED', 
+                        imageBackUrl: 'https://via.placeholder.com/800x450/28a745/ffffff?text=ENDORSED+CLEARED'
+                    },
+                    'DEP-1003': {
+                        userId: 'U-5555', username: 'Charlie Day', amount: 25.00, 
+                        status: 'declined', adminNotes: 'Signature missing on endorsement line.', createdAt: new Date(Date.now() - 7200000), updatedAt: new Date(Date.now() - 500000),
+                        imageFrontUrl: 'https://via.placeholder.com/800x450/dc3545/ffffff?text=CHECK+FRONT+%2425.00', 
+                        imageBackUrl: 'https://via.placeholder.com/800x450/dc3545/ffffff?text=BACK+MISSING+SIGNATURE'
+                    },
+                };
+                
+                const deposit = mockData[depositId] || { 
+                    userId: 'N/A', username: 'Deposit Not Found', amount: 0.00, 
+                    status: 'failed', adminNotes: 'Invalid Deposit ID', createdAt: new Date(), updatedAt: new Date()
+                };
+
+                // --- Update Header and Status Displays ---
+                depositIdDisplay.textContent = depositId;
+                userInfoDisplay.textContent = `User: ${deposit.username || 'N/A'} (ID: ${deposit.userId}) | Amount: $${deposit.amount.toFixed(2)}`;
+                
+                const currentStatusDisplay = document.getElementById('current-status-display');
+                currentStatusDisplay.innerHTML = formatStatusBadge(deposit.status);
+
+                document.getElementById('last-updated-date').textContent = new Date(deposit.updatedAt).toLocaleString();
+                document.getElementById('deposit-status-select').value = deposit.status.toLowerCase();
+                document.getElementById('admin-notes').value = deposit.adminNotes || '';
+                
+                // --- Update Check Images ---
+                const frontImage = document.getElementById('check-front-image');
+                const backImage = document.getElementById('check-back-image');
+                const defaultImageText = "Click to View Full Image (No Image Found)";
+                
+                frontImage.src = deposit.imageFrontUrl || 'https://via.placeholder.com/800x450?text=No+Front+Image+Found';
+                document.getElementById('front-image-status').textContent = deposit.imageFrontUrl ? "Click to View Full Image" : defaultImageText;
+
+                backImage.src = deposit.imageBackUrl || 'https://via.placeholder.com/800x450?text=No+Back+Image+Found';
+                document.getElementById('back-image-status').textContent = deposit.imageBackUrl ? "Click to View Full Image" : defaultImageText;
+
+
+                showToast('Check deposit details loaded.', 'info');
+
+            } catch (error) {
+                console.error("Error fetching deposit details:", error);
+                showToast(`Failed to load deposit details. Reason: ${error.message || 'Network error.'}`, 'error');
+                userInfoDisplay.textContent = 'User: Error Loading Data';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                depositContainer.classList.remove('hidden');
+            }
+        };
+
+        // --- Data Submission Logic ---
+
+        /**
+         * Submits the new deposit status and admin notes to the API (SIMULATION).
+         * @param {Event} event 
+         */
+        const saveDepositStatus = async (event) => {
+            event.preventDefault();
+            
+            const saveButton = document.getElementById('save-status-button');
+            const buttonText = document.getElementById('status-button-text');
+            const originalButtonText = buttonText.textContent;
+            
+            saveButton.disabled = true;
+            buttonText.textContent = 'Updating...';
+
+            if (!depositId) {
+                showToast("Error: Deposit ID not found.", 'error');
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+                return;
+            }
+            
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                logoutAndRedirect();
+                return;
+            }
+
+            const newStatus = document.getElementById('deposit-status-select').value;
+            const adminNotes = document.getElementById('admin-notes').value.trim();
+
+            const isRejectedOrFailed = ['failed', 'declined'].includes(newStatus.toLowerCase());
+
+            // Validation: Admin notes are mandatory for rejected/failed statuses
+            if (isRejectedOrFailed && adminNotes.length < 5) {
+                showToast(`Admin notes are mandatory for a status of '${newStatus.toUpperCase()}' and must be at least 5 characters long.`, 'error');
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+                return;
+            }
+
+            const payload = {
+                status: newStatus,
+                adminNotes: adminNotes
+            };
+            
+            try {
+                // --- MOCK API CALL SIMULATION ---
+                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate PUT request delay
+
+                // Simulate success based on the new status
+                if (newStatus === 'failed' && depositId === 'DEP-1002') {
+                    throw new Error("Cannot change a COMPLETED deposit to FAILED.");
+                }
+
+                // Assume update was successful in the mock environment
+                
+                // Success: Reload the deposit details to update the page
+                // In a real app, you would fetch the data again here.
+                // For this mock, we just update the UI manually for the effect
+                const currentStatusDisplay = document.getElementById('current-status-display');
+                currentStatusDisplay.innerHTML = formatStatusBadge(newStatus);
+                document.getElementById('last-updated-date').textContent = new Date().toLocaleString();
+                document.getElementById('admin-notes').value = adminNotes;
+
+
+                showToast(`Deposit status updated to: ${newStatus.toUpperCase()}!`, 'success');
+
+            } catch (error) {
+                console.error(`Error saving deposit status:`, error);
+                showToast(`Failed to update deposit status. Reason: ${error.message || 'Check console.'}`, 'error');
+            } finally {
+                // Re-enable button
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+            }
+        };
+
+        // --- Event Listeners and Initialization ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check auth token
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                // Mock a token for demonstration purposes if none exists
+                localStorage.setItem('adminToken', 'mock-admin-token-12345');
+            }
+
+            // Get deposit ID
+            depositId = getDepositIdFromUrl();
+            if (!depositId) {
+                // Mock a deposit ID if none is provided for demonstration
+                depositId = 'DEP-1001'; 
+                showToast("URL Parameter 'depositId' missing. Loaded mock ID: DEP-1001.", 'info');
+            }
+
+            // Setup listener for Status Update form
+            document.getElementById('status-update-form').addEventListener('submit', saveDepositStatus);
+
+            // Fetch initial data
+            fetchDepositDetails();
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Mobile System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Custom background image styling with a stronger overlay for mobile contrast */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg'); /* Using a reliable placeholder */
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Stronger dark overlay for readability on all screens */
+            background-color: rgba(0, 0, 0, 0.6); 
+            background-blend-mode: overlay;
+        }
+        
+        /* Overriding Tailwind for the specific bank blue color */
+        .bank-blue {
+            background-color: #0076a3;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        .focus\:ring-bank-blue:focus {
+            --tw-ring-color: #0076a3;
+        }
+        .hover\:bg-bank-blue-dark:hover {
+            background-color: #005f82; /* Slightly darker shade for hover effect */
+        }
+    </style>
+</head>
+
+<body class="banking-bg text-gray-800">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/30 backdrop-blur-sm shadow-md">
+        <h1 class="text-lg sm:text-xl font-bold text-white tracking-wider">Bank Admin Portal</h1>
+        <button id="logout-button-header" onclick="goToPage('Logout')" 
+            class="bg-red-600 text-white px-3 py-1 rounded-lg text-sm shadow-lg hover:bg-red-700 transition duration-150 transform hover:scale-105">
+            Logout
+        </button>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <div id="admin-dashboard" class="bg-white/95 backdrop-blur-sm p-6 md:p-10 rounded-xl shadow-2xl w-full max-w-5xl transition-all duration-300">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-bank-blue mb-2 border-b pb-2">Admin Dashboard</h2>
+            
+            <p id="admin-greeting" class="text-lg text-gray-700 font-semibold mb-4">
+                Welcome, Administrator.
+            </p>
+            
+            <p class="text-sm sm:text-base text-gray-600 mb-8">Select an action to manage the mobile banking system.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                
+                <button onclick="goToPage('Create User Account')" class="bg-green-500 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-green-600 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-green-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Create User Account</span>
+                    <span class="text-xs opacity-80">Onboard new customers</span>
+                </button>
+
+                <button onclick="goToPage('View User Account')" class="bg-gray-700 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-gray-800 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">View User Account</span>
+                    <span class="text-xs opacity-80">Search and view profile details</span>
+                </button>
+                
+                <button onclick="goToPage('Edit User Account')" class="bank-blue text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-bank-blue-dark transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-blue-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Edit User Account</span>
+                    <span class="text-xs opacity-80">Update profile details and KYC</span>
+                </button>
+
+                <button onclick="goToPage('Manage User Funds')" class="bg-yellow-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-yellow-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-yellow-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.419c.172-.281.37-.514.597-.717.275-.25.602-.422.954-.52.545-.154 1.1-.12 1.625.094.757.317 1.258 1.02 1.258 1.815 0 .71-.297 1.34-.836 1.824l-.178.158c-.146.13-.297.265-.454.397.03.028.057.06.082.095.892 1.252 1.155 2.56 1.155 3.593v.033h-8v-.033c0-1.033.263-2.341 1.155-3.593.025-.035.052-.067.082-.095-.157-.132-.308-.267-.454-.397L8.4 10.05c-.539-.484-.836-1.114-.836-1.824 0-.67.433-1.29 1.196-1.611zm1.268-3.048c-.696 0-1.26.564-1.26 1.26s.564 1.26 1.26 1.26 1.26-.564 1.26-1.26-.564-1.26-1.26-1.26zM4 12c0 2.21 3.582 4 8 4s8-1.79 8-4h-2.17c-.714 2.115-3.875 3.75-5.83 3.75-1.956 0-5.118-1.635-5.83-3.75H4zm8 5c-4.418 0-8-1.79-8-4h.001c.714 2.115 3.875 3.75 5.83 3.75 1.956 0 5.118-1.635 5.83-3.75H20c0 2.21-3.582 4-8 4z" clip-rule="evenodd" fill-rule="evenodd"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Manage User Funds</span>
+                    <span class="text-xs opacity-80">Adjust balances and limits</span>
+                </button>
+                
+                <button onclick="goToPage('Generate Bank Card')" class="bg-purple-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-purple-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-purple-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm0 3a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Generate Bank Card</span>
+                    <span class="text-xs opacity-80">Issue new virtual or physical cards</span>
+                </button>
+
+                <button onclick="goToPage('Manage User Account Status')" class="bg-pink-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-pink-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-pink-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Manage Account Status</span>
+                    <span class="text-xs opacity-80">Lock, suspend, or reactivate accounts</span>
+                </button>
+                
+                <button onclick="goToPage('Admin Settings')" class="bg-gray-500 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-gray-600 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-gray-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.3-.857-3.01.8-1.76 2.124a1.533 1.533 0 01-.177 2.286c-1.56.38-1.56 2.6 0 2.98a1.532 1.532 0 01.177 2.286c-1.25 1.324.46 3.18 1.76 2.124a1.533 1.533 0 012.286.948c.38 1.56 2.6 1.56 2.98 0a1.532 1.532 0 012.286-.948c1.3.857 3.01-.8 1.76-2.124a1.533 1.533 0 01.177-2.286c1.56-.38 1.56-2.6 0-2.98a1.532 1.532 0 01-.177-2.286c1.25-1.324-.46-3.18-1.76-2.124a1.533 1.533 0 01-2.286-.948zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Admin Settings</span>
+                    <span class="text-xs opacity-80">Portal configuration</span>
+                </button>
+                
+                <button onclick="goToPage('Generate Mock Transaction')" class="bg-orange-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-orange-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-orange-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM5 13a1 1 0 011-1h6a1 1 0 110 2H6a1 1 0 01-1-1zm0 3a1 1 0 011-1h6a1 1 0 110 2H6a1 1 0 01-1-1zM11 5a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM4 9a1 1 0 011-1h10a1 1 0 010 2H5a1 1 0 01-1-1zM5 1a1 1 0 00-1 1v16a2 2 0 002 2h8a2 2 0 002-2V2a1 1 0 00-1-1H5z" /></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Generate Mock Transaction</span>
+                    <span class="text-xs opacity-80">Simulate financial activity</span>
+                </button>
+
+                <button onclick="goToPage('Update Transaction Status')" class="bg-sky-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-sky-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-sky-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Update Transaction Status</span>
+                    <span class="text-xs opacity-80">Mark transfers as successful or failed</span>
+                </button>
+
+                <button onclick="goToPage('Issue Transfer Message')" class="bg-indigo-600 text-white p-5 md:p-6 rounded-xl shadow-xl hover:bg-indigo-700 transition duration-200 flex flex-col items-center space-y-2 transform hover:scale-[1.02] active:scale-[0.98] focus:ring-4 focus:ring-indigo-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 md:h-10 md:w-10" viewBox="0 0 20 20" fill="currentColor"><path d="M2 5a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2h-2.586l-2.707 2.707A1 1 0 0110 17h-1a1 1 0 01-1-1V5z" /></svg>
+                    <span class="text-base md:text-lg font-semibold text-center">Issue Transfer Message</span>
+                    <span class="text-xs opacity-80">Send system messages about transfers</span>
+                </button>
+            </div>
+            
+            <div class="mt-10 text-center">
+                <button onclick="goToPage('Logout')" class="text-gray-500 hover:text-bank-blue font-medium transition duration-150">
+                    Log Out of Portal
+                </button>
+            </div>
+        </div>
+
+
+        <div id="message-box" class="fixed top-0 left-0 w-full p-4 hidden">
+            </div>
+    </main>
+
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0 text-center md:text-left">
+            
+            <div class="flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-bank-blue" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                </svg>
+                <p>First National &amp; Co. Dashboard</p>
+            </div>
+            
+            <div class="order-3 md:order-2"> <p>Routing Number: 101130607</p>
+                <p>Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4 order-2 md:order-3"> <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" onerror="this.onerror=null;this.src='https://placehold.co/40x20/0076a3/ffffff?text=EQL+HSE';" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" onerror="this.onerror=null;this.src='https://placehold.co/40x20/0076a3/ffffff?text=FDIC';" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const messageBox = document.getElementById('message-box');
+        const adminGreeting = document.getElementById('admin-greeting');
+        const loginPage = 'admin-login.html'; // Define the login page URL
+
+        /**
+         * Displays a temporary message at the top of the screen.
+         */
+        function showMessage(message, bgColorClass) {
+            
+            // Clear previous classes and content
+            messageBox.className = 'fixed top-0 left-0 w-full p-4 text-white text-center shadow-lg transition-all duration-300 z-50';
+            messageBox.classList.remove('hidden');
+            messageBox.classList.add(bgColorClass);
+            messageBox.innerHTML = `<p class="font-medium">${message}</p>`;
+
+            // Auto-hide the message after 4 seconds
+            setTimeout(() => {
+                messageBox.classList.add('hidden');
+            }, 4000);
+        }
+
+        /** * Handles navigation, including the JWT-specific logout logic.
+         */
+        function goToPage(pageName) {
+            
+            console.log(`User clicked to go to: ${pageName}`);
+            
+            if (pageName === 'Logout') {
+                // 💡 JWT LOGOUT LOGIC
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminName');
+                showMessage(`You have successfully logged out. Redirecting...`, 'bg-red-600');
+                setTimeout(() => {
+                    window.location.href = loginPage;
+                }, 1000);
+            } else if (pageName === 'Create User Account') {
+                window.location.href = 'create-user-account.html';
+            } else if (pageName === 'View User Account') {
+                window.location.href = 'view-user-account.html';
+            } else if (pageName === 'Manage User Funds') {
+                window.location.href = 'manage-user-funds.html';
+            } else {
+                const transactionPages = ['Generate Mock Transaction', 'Update Transaction Status', 'Issue Transfer Message'];
+                const colorClass = transactionPages.includes(pageName) ? 'bg-indigo-500' : 'bg-bank-blue';
+                showMessage(`Navigating to: ${pageName}. (Content to be built next!)`, colorClass);
+            }
+        }
+        
+        // ----------------------------------------------------
+        // --- JWT: INITIAL AUTHENTICATION CHECK ON LOAD ---
+        // ----------------------------------------------------
+
+        window.onload = function() {
+            
+            const token = localStorage.getItem('adminToken');
+            const name = localStorage.getItem('adminName');
+
+            // 1. Check for token presence
+            if (!token) {
+                console.warn("No admin token found. Redirecting to login.");
+                showMessage("Session expired or invalid access. Please log in.", 'bg-red-700');
+                setTimeout(() => {
+                    window.location.href = loginPage;
+                }, 1500);
+                return; // Stop execution if no token is found
+            }
+
+            // 2. Set personalized greeting if name is available
+            if (name) {
+                adminGreeting.textContent = `Welcome, ${name}.`;
+            } else {
+                adminGreeting.textContent = `Welcome, Administrator.`;
+            }
+            
+            // 3. Ensure dashboard elements are visible
+            const dashboard = document.getElementById('admin-dashboard');
+            dashboard.classList.remove('hidden'); 
+            console.log("Admin Dashboard loaded successfully with valid token.");
+        };
+
+    </script>
+</body>
+</html>

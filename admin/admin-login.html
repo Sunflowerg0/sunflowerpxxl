@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Mobile  System</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Configure Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Custom background image styling */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Optional: Add a dark overlay to ensure the white login card stands out cleanly */
+            background-color: rgba(0, 0, 0, 0.4);
+            background-blend-mode: overlay;
+        }
+        
+        /* Overriding Tailwind for the specific bank blue color */
+        .bank-blue {
+            background-color: #0076a3;
+        }
+        .text-bank-blue {
+            color: #0076a3;
+        }
+        .focus\:ring-bank-blue:focus {
+            --tw-ring-color: #0076a3;
+        }
+    </style>
+</head>
+
+<body class="banking-bg text-gray-800">
+
+    <!-- Header (Simple placeholder for the top navigation) -->
+    <header class="h-16 w-full"></header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        
+        <!-- ======================================================= -->
+        <!-- 1. ADMIN LOGIN CARD (Initial View) -->
+        <!-- ======================================================= -->
+        <div id="login-card" class="bg-white p-6 md:p-10 rounded-lg shadow-2xl w-full max-w-sm md:max-w-md transition-all duration-300">
+
+            <!-- Bank Logo and Title -->
+            <div class="text-center mb-6">
+                <!-- Using a standard bank logo placeholder -->
+                <img src="https://i.imgur.com/NQxhjxt.png" alt="Admin Bank Logo" class="mx-auto mb-2">
+                <p class="text-xs text-gray-500 mt-4">
+                    <span class="font-bold text-xs text-blue-800">FDIC</span> Insured. Secured by the full faith and credit.
+                </p>
+            </div>
+
+            <h2 class="text-xl font-bold mb-4 text-center">Admin Login</h2>
+
+            <!-- Login Form -->
+            <form id="admin-login-form">
+                
+                <!-- Admin ID Field -->
+                <div class="mb-4">
+                    <label for="adminId" class="block text-sm font-medium text-gray-700 mb-1">Admin ID (Email)</label>
+                    <input type="email" id="adminId" name="adminId" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Remember Me Checkbox -->
+                <div class="flex items-center mb-6">
+                    <input type="checkbox" id="rememberMe" name="rememberMe"
+                           class="h-4 w-4 text-bank-blue border-gray-300 rounded focus:ring-bank-blue">
+                    <label for="rememberMe" class="ml-2 block text-sm text-gray-700">Remember my User ID</label>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" id="login-button"
+                        class="bank-blue w-full text-white py-2 rounded-md font-semibold hover:opacity-90 transition duration-300 shadow-md">
+                    Log In
+                </button>
+            </form>
+            
+            <!-- Link Section (Forgot Password) -->
+            <div class="text-center mt-4">
+                <a href="#" class="text-bank-blue text-sm hover:underline">Forgot Password?</a>
+            </div>
+
+            <hr class="my-6 border-gray-200">
+
+            <!-- Dynamic Link Section -->
+            <div class="grid grid-cols-2 gap-y-2 text-sm text-center">
+                <!-- BUTTON TO CREATE ADMIN ACCOUNT -->
+                <button onclick="showRegisterCard()" class="text-bank-blue hover:underline font-bold transition duration-150">
+                    Create Admin Account
+                </button>
+                <a href="#" class="text-bank-blue hover:underline">Supported Browsers</a>
+                <a href="#" class="text-bank-blue hover:underline">Disclaimer</a>
+                <a href="#" class="text-bank-blue hover:underline">Privacy Policy</a>
+                <a href="#" class="text-bank-blue hover:underline col-span-2">Sign in Problems FAQ</a>
+            </div>
+
+        </div>
+
+        <!-- ======================================================= -->
+        <!-- 2. ADMIN REGISTRATION CARD (Hidden by Default) -->
+        <!-- ======================================================= -->
+        <div id="register-card" class="hidden bg-white p-6 md:p-10 rounded-lg shadow-2xl w-full max-w-sm md:max-w-md transition-all duration-300">
+
+            <div class="text-center mb-6">
+                <img src="https://i.imgur.com/Q6dsATF.png" alt="Admin Bank Logo" class="mx-auto mb-2">
+                <p class="text-xs text-gray-500 mt-4">New Administrator Registration</p>
+            </div>
+            
+            <h2 class="text-xl font-bold mb-4 text-center">Create Admin Account</h2>
+            
+            <form id="admin-register-form">
+                
+                <!-- Full Name Field -->
+                <div class="mb-4">
+                    <label for="registerName" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <input type="text" id="registerName" name="registerName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Email Field (Admin ID) -->
+                <div class="mb-4">
+                    <label for="registerEmail" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input type="email" id="registerEmail" name="registerEmail" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <label for="registerPassword" class="block text-sm font-medium text-gray-700 mb-1">Choose Password</label>
+                    <input type="password" id="registerPassword" name="registerPassword" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="mb-6">
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bank-blue transition duration-150">
+                </div>
+
+                <!-- Register Button -->
+                <button type="submit" id="register-button"
+                        class="bank-blue w-full text-white py-2 rounded-md font-semibold hover:opacity-90 transition duration-300 shadow-md">
+                    Register Admin
+                </button>
+            </form>
+
+            <div class="text-center mt-6">
+                <button onclick="showLoginCard()" class="text-bank-blue text-sm hover:underline transition duration-150">
+                    &larr; Back to Admin Login
+                </button>
+            </div>
+        </div>
+
+        <!-- Dynamic Message Box (for errors/loading) -->
+        <div id="message-box" class="fixed top-0 left-0 w-full p-4 hidden">
+            <!-- Content filled by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer Bar -->
+    <footer class="w-full p-4 bg-white shadow-inner mt-auto">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            
+            <div class="flex items-center space-x-2">
+                <!-- Footer Icon/Text -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-bank-blue" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                </svg>
+                <p>First National &amp; Company.pdf</p>
+            </div>
+            
+            <div class="text-center">
+                <p>Routing Number: 101130607</p>
+                <p>Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <!-- Housing Lender Icon -->
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" alt="Equal Housing Lender" class="h-5">
+                <!-- FDIC Icon -->
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+    
+<script>
+    // Keeping this as an empty string since your frontend/backend are on the same domain
+    const API_BASE_URL = '';
+
+    const loginCard = document.getElementById('login-card');
+    const registerCard = document.getElementById('register-card');
+    const messageBox = document.getElementById('message-box');
+    
+    function showLoginCard() {
+        loginCard.classList.remove('hidden');
+        registerCard.classList.add('hidden');
+    }
+
+    function showRegisterCard() {
+        loginCard.classList.add('hidden');
+        registerCard.classList.remove('hidden');
+    }
+
+    function showMessage(message, bgColorClass) {
+        messageBox.className = 'fixed top-0 left-0 w-full p-4 text-white text-center shadow-lg transition-all duration-300 z-50';
+        messageBox.classList.remove('hidden');
+        messageBox.classList.add(bgColorClass);
+        messageBox.innerHTML = `<p>${message}</p>`;
+
+        setTimeout(() => {
+            messageBox.classList.add('hidden');
+        }, 4000);
+    }
+
+    // --- ADMIN LOGIN HANDLER ---
+    document.getElementById('admin-login-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const adminId = document.getElementById('adminId').value;
+        const password = document.getElementById('password').value;
+        const loginButton = document.getElementById('login-button');
+
+        loginButton.disabled = true;
+        loginButton.innerHTML = "Logging In...";
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admins/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminId, password })
+            });
+
+            // --- SAFETY CHECK START ---
+            // This prevents the "Unexpected token A" error when the server crashes
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const errorText = await response.text();
+                console.error("Critical Server Error:", errorText);
+                throw new Error("Server Error: Database connection failed or Secret Key missing.");
+            }
+            // --- SAFETY CHECK END ---
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                if (data.token) localStorage.setItem('adminToken', data.token);
+                if (data.adminName) localStorage.setItem('adminName', data.adminName);
+                
+                showMessage('Login Successful!', 'bg-green-500');
+                setTimeout(() => { window.location.href = 'admin-dashboard.html'; }, 1000); 
+            } else {
+                showMessage(data.message || 'Invalid Credentials', 'bg-red-500');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // This will now show a readable error instead of a SyntaxError
+            showMessage(error.message, 'bg-red-700');
+        } finally {
+            loginButton.innerHTML = 'Log In';
+            loginButton.disabled = false;
+        }
+    });
+
+    // --- ADMIN REGISTRATION HANDLER ---
+    document.getElementById('admin-register-form').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const fullName = document.getElementById('registerName').value;
+        const email = document.getElementById('registerEmail').value;
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const registerButton = document.getElementById('register-button');
+
+        if (password !== confirmPassword) return showMessage('Passwords do not match.', 'bg-yellow-500');
+
+        registerButton.disabled = true;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/admins/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullName, email, password })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.success) {
+                showMessage('Admin Registered!', 'bg-green-600');
+                setTimeout(showLoginCard, 2000);
+            } else {
+                showMessage(data.message || 'Registration failed.', 'bg-red-500');
+            }
+        } catch (error) {
+            showMessage("Registration Error: Check database connection.", 'bg-red-700');
+        } finally {
+            registerButton.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

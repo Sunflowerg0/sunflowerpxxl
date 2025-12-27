@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Mock Transactions - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Define the custom accent color
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', // Primary blue
+                            dark: '#005f82',    // Darker hover blue
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Background (using the image and overlay) */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Dark overlay for better contrast */
+            background-color: rgba(0, 0, 0, 0.5); 
+            background-blend-mode: overlay;
+        }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/40 backdrop-blur-sm shadow-xl fixed top-0 z-40">
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wider">Transaction Generator</h1> 
+        <button onclick="goToUserList()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-md text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-105">
+            &larr; Back to Users
+        </button>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+    <div id="loading-indicator-global" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-6 rounded-lg shadow-xl flex items-center space-x-3">
+            <svg class="animate-spin h-5 w-5 text-bank-blue" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-gray-700 font-semibold" id="loading-text">Generating mock transactions...</span>
+        </div>
+    </div>
+
+
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl rounded-xl p-4 sm:p-8">
+            
+            <header class="mb-6 border-b pb-4">
+                <h2 class="text-2xl font-extrabold text-bank-blue">Generate Mock Transactions</h2>
+                <p class="text-gray-600 mt-1 text-sm">
+                    Create synthetic transaction data for user: 
+                    <strong id="user-display-name" class="text-gray-800">[Loading User Name...]</strong>.
+                </p>
+            </header>
+
+            <form id="mock-transaction-form" class="space-y-6">
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700">Target User ID</label>
+                    <input type="text" id="user-id-input" readonly
+                        class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500 font-mono shadow-sm">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    <div>
+                        <label for="num-transactions" class="block text-sm font-medium text-gray-700">Number of Transactions (1-100)</label>
+                        <input type="number" id="num-transactions" name="num-transactions" required min="1" max="100" value="10"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    </div>
+
+                    <div>
+                        <label for="transaction-type" class="block text-sm font-medium text-gray-700">Primary Type</label>
+                        <select id="transaction-type" name="transaction-type" required
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                            <option value="MIXED">Mixed (Deposit, Withdrawal, Transfer)</option>
+                            <option value="DEPOSIT">Deposit Only</option>
+                            <option value="WITHDRAWAL">Withdrawal Only</option>
+                            <option value="TRANSFER_OUT">Transfer Out Only</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="min-amount" class="block text-sm font-medium text-gray-700">Minimum Amount (USD)</label>
+                        <input type="number" id="min-amount" name="min-amount" required step="0.01" min="0.01" value="5.00"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    </div>
+                    <div>
+                        <label for="max-amount" class="block text-sm font-medium text-gray-700">Maximum Amount (USD)</label>
+                        <input type="number" id="max-amount" name="max-amount" required step="0.01" min="0.01" value="500.00"
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-bank-blue/5 rounded-lg border border-bank-blue/20">
+                    <h3 class="col-span-full text-lg font-semibold text-bank-blue">Transaction Date Range</h3>
+                    <div>
+                        <label for="start-date" class="block text-sm font-medium text-gray-700">Start Date</label>
+                        <input type="date" id="start-date" name="start-date" required
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    </div>
+                    <div>
+                        <label for="end-date" class="block text-sm font-medium text-gray-700">End Date</label>
+                        <input type="date" id="end-date" name="end-date" required
+                            class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="description-pattern" class="block text-sm font-medium text-gray-700">Transaction Description Pattern</label>
+                    <input type="text" id="description-pattern" name="description-pattern" value="Mock Transaction at Merchant X"
+                        class="mt-1 block w-full rounded-md border border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-2">
+                    <p class="mt-1 text-xs text-gray-500">A random description will be generated based on this pattern.</p>
+                </div>
+
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-green-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-700 transition duration-150 ease-in-out shadow-xl text-lg disabled:bg-gray-400">
+                    Generate Transactions
+                </button>
+
+            </form>
+        </div>
+    </main>
+
+   <script>
+        // --- Configuration ---
+        const API_BASE_URL = '/api/users'; 
+        const loginPage = 'admin-login.html'; 
+        const userListPage = 'view-user-account.html';
+
+        let targetUserId = null; 
+
+        // --- Helper Functions ---
+
+        /**
+         * Clears local storage and redirects to the login page.
+         */
+        const logoutAndRedirect = () => {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminName');
+            showToast('Session expired or unauthorized. Please log in again.', 'error');
+            setTimeout(() => { window.location.href = loginPage; }, 1500);
+        }
+
+        /**
+         * Redirects back to the user list.
+         */
+        window.goToUserList = () => {
+            window.location.href = userListPage; 
+        }
+
+        // --- Loading Indicator ---
+        const showLoading = (text = 'Processing request...') => {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-indicator-global').classList.remove('hidden');
+            document.getElementById('submit-btn').disabled = true;
+        }
+
+        const hideLoading = () => {
+            document.getElementById('loading-indicator-global').classList.add('hidden');
+            document.getElementById('submit-btn').disabled = false;
+        }
+
+
+        // --- Custom Toast/Notification Function (Reused from view-user-accounts) ---
+        const showToast = (message, type = 'success') => {
+            const toastContainer = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max opacity-0 transition-all duration-500 ease-out transform translate-x-full";
+            let iconSvg = '';
+
+            switch (type) {
+                case 'success':
+                    baseClasses += " bg-green-500 text-white";
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'error':
+                    baseClasses += " bg-red-600 text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'info':
+                default:
+                    baseClasses += " bg-bank-blue text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+            }
+
+            const toastElement = document.createElement('div');
+            toastElement.className = baseClasses;
+            toastElement.innerHTML = iconSvg + `<span>${message}</span>`;
+            
+            toastContainer.appendChild(toastElement);
+
+            // Animate in
+            setTimeout(() => {
+                toastElement.classList.remove('translate-x-full', 'opacity-0');
+            }, 10); 
+
+            // Animate out and remove
+            setTimeout(() => {
+                toastElement.classList.add('translate-x-full', 'opacity-0');
+                const removeToast = () => {
+                    toastElement.removeEventListener('transitionend', removeToast);
+                    toastElement.remove();
+                };
+                toastElement.addEventListener('transitionend', removeToast);
+            }, 3000);
+        };
+
+
+        /**
+         * Fetches the user's name to display in the header for context.
+         */
+        const fetchUserName = async (userId) => {
+            const token = localStorage.getItem('adminToken');
+            const userDisplayName = document.getElementById('user-display-name');
+
+            if (!token) return logoutAndRedirect();
+
+            try {
+                showLoading('Fetching user details...');
+                const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    return logoutAndRedirect();
+                }
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+                
+                const user = await response.json();
+                userDisplayName.textContent = user.fullName || user.username || 'User not found';
+
+            } catch (error) {
+                console.error("Error fetching user name:", error);
+                userDisplayName.textContent = 'ERROR LOADING NAME';
+                showToast(`Could not load user details: ${error.message}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        };
+
+
+        /**
+         * Handles the form submission to generate mock transactions.
+         */
+        const handleGenerateMockTransactions = async (event) => {
+            event.preventDefault();
+
+            if (!targetUserId) {
+                showToast('User ID is missing. Cannot proceed.', 'error');
+                return;
+            }
+
+            const token = localStorage.getItem('adminToken');
+            if (!token) return logoutAndRedirect();
+
+            const form = event.target;
+            
+            // --- DATE CALCULATION FIX ---
+            const startDate = new Date(form['start-date'].value);
+            const endDate = new Date(form['end-date'].value);
+            const today = new Date();
+            
+            // Basic validation check for date range
+            if (startDate > endDate) {
+                 showToast('Start Date cannot be after End Date.', 'error');
+                 return;
+            }
+
+            // Normalize today's date to midnight for consistent "days ago" calculation
+            today.setHours(0, 0, 0, 0); 
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(0, 0, 0, 0);
+            
+            // Milliseconds in a day
+            const msInDay = 24 * 60 * 60 * 1000;
+            
+            // Calculate days ago (Math.ceil used to ensure a full day difference is counted)
+            // Start Days Ago: How many full days are between today and the start date.
+            const startDaysAgo = Math.ceil((today.getTime() - startDate.getTime()) / msInDay);
+            
+            // End Days Ago: How many full days are between today and the end date.
+            const endDaysAgo = Math.ceil((today.getTime() - endDate.getTime()) / msInDay);
+
+
+            const payload = {
+                numTransactions: parseInt(form['num-transactions'].value),
+                transactionType: form['transaction-type'].value,
+                minAmount: parseFloat(form['min-amount'].value),
+                maxAmount: parseFloat(form['max-amount'].value),
+                
+                // 🔥 CRITICAL FIX: Sending numbers for days ago, which the backend expects.
+                startDaysAgo: startDaysAgo, 
+                endDaysAgo: endDaysAgo,     
+                
+                descriptionPattern: form['description-pattern'].value
+            };
+
+
+            try {
+                showLoading(`Generating ${payload.numTransactions} transactions...`);
+                
+                // 🔥 REAL API CALL: POST /api/users/:id/transactions/generate
+                const response = await fetch(`${API_BASE_URL}/${targetUserId}/transactions/generate`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    return logoutAndRedirect();
+                }
+
+                const result = await response.json().catch(() => ({}));
+
+                if (!response.ok) {
+                    throw new Error(result.message || `HTTP error! status: ${response.status}`);
+                }
+
+                showToast(`Successfully generated ${result.count || payload.numTransactions} mock transactions for the user!`, 'success');
+                // Optional: Redirect back to the user list or funds management page
+                // setTimeout(() => goToUserList(), 2000); 
+
+            } catch (error) {
+                console.error("Error generating transactions:", error);
+                showToast(`Failed to generate transactions. Reason: ${error.message || 'Network or server error.'}`, 'error');
+            } finally {
+                hideLoading();
+            }
+        };
+
+        // --- Initialization on Load ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('adminToken');
+
+            if (!token) {
+                return logoutAndRedirect();
+            }
+
+            // 1. Get User ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const id = urlParams.get('id');
+
+            if (!id) {
+                showToast('Error: Missing User ID in URL parameter.', 'error');
+                setTimeout(() => goToUserList(), 2000);
+                return;
+            }
+
+            targetUserId = id;
+            document.getElementById('user-id-input').value = id;
+            
+            // Set default date range (e.g., last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            document.getElementById('end-date').value = formatDate(today);
+            document.getElementById('start-date').value = formatDate(thirtyDaysAgo);
+
+
+            // 2. Fetch User Name for Context
+            fetchUserName(id);
+
+            // 3. Attach Form Listener
+            document.getElementById('mock-transaction-form').addEventListener('submit', handleGenerateMockTransactions);
+
+            console.log("Mock Transaction Generator page loaded successfully.");
+        });
+
+    </script>
+</body>
+</html>

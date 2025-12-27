@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Message Configuration - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Tailwind Configuration with Bank Theme
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', // Primary blue
+                            dark: '#005f82',    // Darker hover blue
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Background (using the image and overlay) */
+        .banking-bg {
+            background-image: url('https://i.imgur.com/uKhPaS5.jpeg');
+            background-size: cover; 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* Dark overlay for better contrast */
+            background-color: rgba(0, 0, 0, 0.5); 
+            background-blend-mode: overlay;
+        }
+
+        /* Custom toggle switch styling (using CSS for aesthetics) */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        /* Apply bank-blue when checked */
+        input:checked + .slider {
+            background-color: #0076a3; 
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #0076a3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/40 backdrop-blur-sm shadow-xl fixed top-0 z-40">
+        <h1 class="text-xl sm:text-2xl font-bold text-white tracking-wider">User Message Configuration</h1> 
+        <button onclick="goToUserManagement()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-md text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-105">
+            &larr; Back to Users
+        </button>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-4xl mx-auto bg-white/95 backdrop-blur-sm shadow-2xl rounded-xl p-4 sm:p-8">
+            
+            <header class="mb-6 border-b pb-4">
+                <h2 class="text-2xl font-extrabold text-bank-blue">Manage User-Specific Messages</h2>
+                <p class="text-gray-600 mt-1 text-sm">
+                    Configure the **primary announcement message** for User ID: 
+                    <span id="user-id-display" class="font-mono text-xs bg-gray-100 p-1 rounded">Loading...</span>
+                </p>
+                <p id="user-name-display" class="text-lg font-semibold mt-2 text-gray-800">
+                    User: Loading...
+                </p>
+            </header>
+
+            <div id="loading-indicator" class="text-center p-12 text-bank-blue font-semibold">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Loading User Data...</span>
+                </div>
+            </div>
+
+            <div id="message-container" class="space-y-8 hidden">
+                
+                <div class="border-2 border-dashed border-bank-blue/30 rounded-lg p-6 bg-blue-50/50">
+                    <h3 class="text-xl font-bold text-bank-blue mb-4 flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-1.052-1.34L9 14.24V8.5C9 7.395 8.105 6.5 7 6.5H5.828c-.469 0-.917.184-1.24.512L4 7.5V19.24a1.76 1.76 0 001.052 1.34l.708.236A1.76 1.76 0 007.5 20.24v-6.74"></path></svg>
+                        General Announcement Message
+                    </h3>
+                    <form id="announcement-form">
+                        <div class="mb-4 p-3 bg-white rounded-lg flex items-center justify-between border shadow-sm">
+                            <div>
+                                <label for="announcement-is-active-toggle" class="block text-sm font-medium text-gray-700">Message Status</label>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    When ON, this message is prominently displayed on the user's dashboard.
+                                </p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <span id="announcement-toggle-label" class="font-bold text-red-600">OFF</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="announcement-is-active-toggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label for="announcement-message-content" class="block text-sm font-medium text-gray-700 mb-2">
+                                Announcement Text
+                            </label>
+                            <textarea id="announcement-message-content" rows="4" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-bank-blue focus:ring-bank-blue p-3 border resize-none"
+                                placeholder="E.g., Important: Your account security features have been upgraded. Please review your settings."></textarea>
+                        </div>
+                        
+                        <button type="submit" id="save-announcement-button" 
+                            class="w-full bg-bank-blue text-white font-semibold py-2 px-4 rounded-lg hover:bg-bank-blue-dark transition duration-150 ease-in-out shadow-md text-base disabled:bg-gray-400">
+                            <span id="announcement-button-text">Save Announcement</span>
+                        </button>
+                    </form>
+                </div>
+
+                </div>
+
+        </div>
+    </main>
+
+
+    <script>
+        // --- CONFIGURATION & GLOBALS ---
+        const API_BASE_URL = '/api/users';
+        const userManagementPage = 'view-user-account.html'; // Placeholder redirect
+        const loginPage = 'admin-login.html'; // Placeholder redirect
+        let userId = null;
+        
+        // --- Utility Functions ---
+
+        /**
+         * Clears local storage and redirects to the login page.
+         */
+        const logoutAndRedirect = () => {
+            localStorage.removeItem('adminToken');
+            localStorage.removeItem('adminName');
+            showToast('Session expired or unauthorized. Please log in again.', 'error');
+            setTimeout(() => { window.location.href = loginPage; }, 1500);
+        }
+
+        /**
+         * Navigates back to the user management page.
+         */
+        window.goToUserManagement = () => {
+             window.location.href = userManagementPage; 
+        }
+
+        // --- Custom Toast/Notification Function ---
+        const showToast = (message, type = 'success') => {
+            const toastContainer = document.getElementById('toast-container');
+            const toastElement = document.createElement('div');
+            
+            let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max opacity-0 transition-all duration-500 ease-out transform translate-x-full";
+            let iconSvg = '';
+
+            switch (type) {
+                case 'success':
+                    baseClasses += " bg-green-500 text-white";
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'error':
+                    baseClasses += " bg-red-600 text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+                case 'info':
+                default:
+                    baseClasses += " bg-bank-blue text-white"; 
+                    iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                    break;
+            }
+            
+            toastElement.className = baseClasses;
+            toastElement.innerHTML = iconSvg + `<span>${message}</span>`;
+            
+            toastContainer.appendChild(toastElement);
+
+            // Animate in
+            setTimeout(() => {
+                toastElement.classList.remove('translate-x-full', 'opacity-0');
+            }, 10); 
+
+            // Animate out and remove
+            setTimeout(() => {
+                toastElement.classList.add('translate-x-full', 'opacity-0');
+                const removeToast = () => {
+                    toastElement.removeEventListener('transitionend', removeToast);
+                    toastElement.remove();
+                };
+                toastElement.addEventListener('transitionend', removeToast);
+            }, 3000);
+        };
+        
+        // --- Data Fetching and Initialization ---
+
+        /**
+         * Parses the query string to get the user ID.
+         * @returns {string|null} The user ID or null.
+         */
+        const getUserIdFromUrl = () => {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id'); 
+        }
+
+        /**
+         * Updates the UI based on the toggle state for a specific message type.
+         * @param {string} type - 'announcement'
+         * @param {boolean} isActive 
+         */
+        const updateToggleUI = (type, isActive) => {
+            const toggleLabel = document.getElementById(`${type}-toggle-label`);
+            if (!toggleLabel) return;
+            
+            if (isActive) {
+                toggleLabel.textContent = 'ON';
+                toggleLabel.classList.remove('text-red-600');
+                toggleLabel.classList.add('text-bank-blue');
+            } else {
+                toggleLabel.textContent = 'OFF';
+                toggleLabel.classList.remove('text-bank-blue');
+                toggleLabel.classList.add('text-red-600');
+            }
+        }
+        
+        /**
+         * Fetches user details including the current message configurations.
+         */
+        const fetchUserDetails = async () => {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const messageContainer = document.getElementById('message-container');
+            const userIdDisplay = document.getElementById('user-id-display');
+            const userNameDisplay = document.getElementById('user-name-display');
+            const token = localStorage.getItem('adminToken');
+
+            if (!token || !userId) {
+                logoutAndRedirect();
+                return;
+            }
+            
+            loadingIndicator.classList.remove('hidden');
+            messageContainer.classList.add('hidden');
+
+            try {
+                // Fetch the specific user's data
+                const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                
+                if (response.status === 401 || response.status === 403) {
+                    logoutAndRedirect();
+                    return;
+                }
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                }
+                
+                const user = await response.json();
+                
+                // Update header displays
+                userIdDisplay.textContent = userId;
+                userNameDisplay.textContent = `User: ${user.fullName || user.username || 'Unknown User'}`;
+
+                // --- 1. Populate Announcement Form ---
+                // We rely on the server to only send announcementMessage
+                const announcementConfig = user.announcementMessage || {};
+                const annIsActive = announcementConfig.isActive || false;
+                const annContent = announcementConfig.messageContent || '';
+
+                document.getElementById('announcement-message-content').value = annContent;
+                document.getElementById('announcement-is-active-toggle').checked = annIsActive;
+                updateToggleUI('announcement', annIsActive);
+                
+                // ❌ REMOVED: Logic for Issue Form
+
+                showToast('User message configurations loaded.', 'info');
+
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+                showToast(`Failed to load user details. Reason: ${error.message || 'Network error.'}`, 'error');
+                userNameDisplay.textContent = 'User: Error Loading Data';
+            } finally {
+                loadingIndicator.classList.add('hidden');
+                messageContainer.classList.remove('hidden');
+            }
+        };
+
+        // --- Data Submission Logic ---
+
+        /**
+         * Submits the message configuration for a specific type to the API.
+         * @param {Event} event 
+         * @param {string} type - 'announcement'
+         */
+        const saveMessage = async (event, type) => {
+            event.preventDefault();
+            
+            // 🚨 CRITICAL CHECK: Only allow 'announcement' type to proceed
+            if (type !== 'announcement') return; 
+            
+            const saveButton = document.getElementById(`save-${type}-button`);
+            const buttonText = document.getElementById(`${type}-button-text`);
+            const originalButtonText = buttonText.textContent;
+            
+            // Disable button and show loading state
+            saveButton.disabled = true;
+            buttonText.textContent = 'Saving...';
+
+            if (!userId) {
+                showToast("Error: User ID not found.", 'error');
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+                return;
+            }
+            
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                logoutAndRedirect();
+                return;
+            }
+
+            const isActive = document.getElementById(`${type}-is-active-toggle`).checked;
+            const messageContent = document.getElementById(`${type}-message-content`).value.trim();
+
+            // ❌ SIMPLIFIED: messageKey is always 'announcementMessage' now
+            const messageKey = 'announcementMessage'; 
+
+            const payload = {
+                [messageKey]: {
+                    isActive: isActive,
+                    messageContent: messageContent
+                }
+            };
+            
+            // Basic validation: If active, the message content must not be empty.
+            if (isActive && messageContent.length < 5) {
+                showToast("If 'ON', the Announcement Message Content must be at least 5 characters long.", 'error');
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+                return;
+            }
+
+            try {
+                // API Call: PUT /api/users/:id 
+                const response = await fetch(`${API_BASE_URL}/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 401 || response.status === 403) {
+                    logoutAndRedirect();
+                    return;
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    // The 500 error originates here. It MUST be fixed on the server.
+                    throw new Error(errorData.message || `Server error during user update.`); 
+                }
+
+                showToast(`Announcement message updated successfully! Status: ${isActive ? 'ON' : 'OFF'}`, 'success');
+
+            } catch (error) {
+                console.error(`Error saving ${type} message:`, error);
+                showToast(`Failed to save ${type} configuration. Reason: ${error.message || 'Check console.'}`, 'error');
+            } finally {
+                // Re-enable button
+                saveButton.disabled = false;
+                buttonText.textContent = originalButtonText;
+            }
+        };
+
+        // --- Event Listeners and Initialization ---
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check auth token
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                logoutAndRedirect();
+                return;
+            }
+
+            // Get user ID
+            userId = getUserIdFromUrl();
+            if (!userId) {
+                showToast("Error: Missing user ID in URL parameters.", 'error');
+                document.getElementById('user-id-display').textContent = 'N/A';
+                document.getElementById('user-name-display').textContent = 'User: Invalid Request';
+                return;
+            }
+
+            // Setup listeners for Announcement form (Only one form remains)
+            document.getElementById('announcement-form').addEventListener('submit', (e) => saveMessage(e, 'announcement'));
+            document.getElementById('announcement-is-active-toggle').addEventListener('change', (e) => {
+                updateToggleUI('announcement', e.target.checked);
+            });
+            
+            // ❌ REMOVED: Event listeners for Issue form
+
+            // Fetch initial data
+            fetchUserDetails();
+        });
+
+    </script>
+</body>
+</html>

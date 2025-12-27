@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Account Status - Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        // Consistent 'bank-blue' definition
+                        'bank-blue': {
+                            DEFAULT: '#0076a3', // Primary blue
+                            dark: '#005f82',    // Darker hover blue
+                        },
+                        // Status specific colors
+                        'status-active': '#10b981', // green-500
+                        'status-locked': '#f59e0b', // amber-500 (Used for restricted/locked)
+                        'status-suspended': '#f97316', // orange-500
+                        'status-blocked': '#ef4444', // red-500
+                        'status-closed': '#6b7280', // gray-500
+                    },
+                },
+            },
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        /* Consistent background styling */
+        .banking-bg {
+            background-color: #f7f9fb;
+            background-image: linear-gradient(135deg, #f7f9fb 0%, #e0e7ff 100%);
+        }
+        /* Style for the current status badge based on its content */
+        .status-badge {
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            display: inline-block;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        /* Custom radio button styling: Highlights the span when the hidden radio is checked */
+        input[type="radio"]:checked + span {
+            @apply ring-2 ring-bank-blue border-bank-blue bg-bank-blue/10;
+        }
+        input[type="radio"]:not(:checked) + span {
+            @apply border-gray-300 hover:border-bank-blue/50 bg-white;
+        }
+    </style>
+</head>
+
+<body class="banking-bg min-h-screen text-gray-800">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-white shadow-md fixed top-0 z-40">
+        <h1 class="text-xl sm:text-2xl font-bold text-bank-blue tracking-wider">Account Status Manager</h1>
+        <!-- Button uses the consistent goToUserList function to navigate back -->
+        <button onclick="goToUserList()" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm shadow-lg hover:bg-gray-700 transition duration-150 transform hover:scale-105">
+            &larr; Back to Users
+        </button>
+    </header>
+
+    <div id="toast-container" class="fixed top-20 right-4 space-y-2 z-50"></div>
+
+    <main class="pt-24 pb-8 px-4 sm:px-8">
+        <div class="max-w-xl mx-auto bg-white shadow-2xl rounded-xl p-6 sm:p-8 border border-bank-blue/20">
+            
+            <header class="mb-8 border-b pb-4">
+                <h2 class="text-2xl font-extrabold text-gray-800">Change Status for: <span id="user-name" class="text-bank-blue font-semibold text-xl">Loading...</span></h2>
+                <p class="text-gray-500 mt-1 text-sm" id="user-id-display">User ID: N/A</p>
+            </header>
+
+            <!-- Loading Indicator -->
+            <div id="loading-indicator" class="text-center p-12 text-bank-blue font-semibold">
+                <div class="flex items-center justify-center space-x-2">
+                    <svg class="animate-spin h-5 w-5 mr-3 text-bank-blue" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Fetching Current Status...</span>
+                </div>
+            </div>
+
+            <!-- Current Status Display -->
+            <div id="status-display-section" class="mb-8 p-4 bg-bank-blue/5 rounded-lg border border-bank-blue/10 hidden">
+                <p class="text-lg font-medium text-gray-700 mb-2">Current Account Status:</p>
+                <div id="current-status-badge" class="status-badge" style="background-color: #e5e7eb; color: #4b5563;">
+                    UNKNOWN
+                </div>
+            </div>
+
+            <!-- Status Update Form -->
+            <form id="status-form" class="space-y-6 hidden" onsubmit="handleStatusUpdate(event)">
+                <h3 class="text-xl font-semibold text-gray-700 pt-4 border-t">Select New Status</h3>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <!-- Status Options (Input 'value' is what gets sent to the API) -->
+                    <label for="status-active" class="cursor-pointer">
+                        <input type="radio" id="status-active" name="newStatus" value="active" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Active</span>
+                    </label>
+                    <label for="status-suspended" class="cursor-pointer">
+                        <input type="radio" id="status-suspended" name="newStatus" value="suspended" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Suspended</span>
+                    </label>
+                    <label for="status-restricted" class="cursor-pointer">
+                        <input type="radio" id="status-restricted" name="newStatus" value="restricted" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Restricted</span>
+                    </label>
+                    <label for="status-locked" class="cursor-pointer">
+                        <input type="radio" id="status-locked" name="newStatus" value="locked" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Locked</span>
+                    </label>
+                    <label for="status-blocked" class="cursor-pointer">
+                        <input type="radio" id="status-blocked" name="newStatus" value="blocked" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Blocked</span>
+                    </label>
+                    <label for="status-closed" class="cursor-pointer">
+                        <input type="radio" id="status-closed" name="newStatus" value="closed" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200">Closed</span>
+                    </label>
+                    
+                    <!-- Reactivate is just a visual alias for 'active' -->
+                    <label for="status-reactivate" class="cursor-pointer">
+                        <input type="radio" id="status-reactivate" name="newStatus" value="active" class="hidden">
+                        <span class="block text-center p-3 border rounded-xl font-medium transition duration-200 bg-green-500/10 text-green-700">Reactivate</span>
+                    </label>
+                </div>
+
+                <div>
+                    <label for="reason" class="block text-sm font-medium text-gray-700">Justification / Reason for Status Change (Required for Audit)</label>
+                    <div class="mt-1">
+                        <textarea id="reason" name="reason" rows="3" required
+                                class="shadow-sm focus:ring-bank-blue focus:border-bank-blue block w-full sm:text-sm border border-gray-300 rounded-md p-2.5" 
+                                placeholder="e.g., 'Status change due to fraudulent activity investigation'"></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" id="submit-btn"
+                        class="w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-medium text-white bg-bank-blue hover:bg-bank-blue-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-bank-blue transition duration-150 transform hover:scale-[1.01] flex items-center justify-center">
+                    <span id="submit-text">Update Account Status</span>
+                </button>
+                <p id="status-error" class="text-sm text-red-600 text-center hidden"></p>
+            </form>
+        </div>
+    </main>
+
+<script>
+    // ----------------------------------------------------------------------
+    // --- CONFIGURATION & GLOBALS ---
+    // ----------------------------------------------------------------------
+    // NOTE: These URLs assume a functional, non-CORS-restricted backend API.
+    const API_USER_DETAIL_URL = '/api/users/'; 
+    const API_STATUS_UPDATE_URL = '/api/accounts/status'; 
+    const USER_LIST_PAGE = 'view-user-account.html'; 
+    const LOGIN_PAGE = 'admin-login.html';
+
+    let userId = null;
+    let currentLiveUser = null; 
+
+    // Mapping status to colors
+    const STATUS_COLORS = {
+        'active': { color: 'white', bg: 'bg-status-active' },
+        'suspended': { color: 'white', bg: 'bg-status-suspended' },
+        'restricted': { color: 'white', bg: 'bg-status-locked' }, 
+        'closed': { color: 'white', bg: 'bg-status-closed' },
+        'blocked': { color: 'white', bg: 'bg-status-blocked' },
+        'locked': { color: 'white', bg: 'bg-status-locked' },
+        'unknown': { color: 'white', bg: 'bg-gray-400' }
+    };
+
+    // --- Utility Functions ---
+
+    const logoutAndRedirect = () => {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminName');
+        showToast('Session expired or unauthorized. Please log in again.', 'error');
+        setTimeout(() => { window.location.href = LOGIN_PAGE; }, 1500);
+    }
+
+    window.goToUserList = () => {
+        window.location.href = './' + USER_LIST_PAGE; 
+    }
+
+    // Custom Toast/Notification Function
+    const showToast = (message, type = 'success') => {
+        const toastContainer = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        let baseClasses = "p-4 rounded-lg shadow-xl text-sm font-semibold flex items-center min-w-max transition transform duration-500 ease-out translate-x-full opacity-0";
+        let iconSvg = '';
+
+        switch (type) {
+            case 'success':
+                baseClasses += " bg-green-500 text-white";
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'error':
+                baseClasses += " bg-red-600 text-white";
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+            case 'info':
+            default:
+                baseClasses += " bg-bank-blue text-white";
+                iconSvg = `<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                break;
+        }
+
+        toast.className = baseClasses;
+        toast.innerHTML = iconSvg + `<span>${message}</span>`;
+        toastContainer.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => { toast.classList.remove('translate-x-full', 'opacity-0'); }, 10); 
+        // Animate out and remove
+        setTimeout(() => {
+            toast.classList.add('translate-x-full', 'opacity-0');
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
+    };
+    
+    /**
+     * Updates the UI elements based on the fetched user data, focusing on status.
+     * @param {Object} user - The user object fetched from the API.
+     */
+    const updateUI = (user) => {
+        currentLiveUser = user;
+        
+        document.getElementById('user-name').textContent = user.fullName || 'User Account';
+        document.getElementById('user-id-display').textContent = `User ID: ${userId}`; 
+        
+        const currentStatus = user.status || 'unknown'; 
+        displayCurrentStatus(currentStatus);
+
+        // NEW: Pre-select the current status in the radio buttons
+        const currentStatusValue = currentStatus.toLowerCase();
+        const currentRadio = document.querySelector(`input[name="newStatus"][value="${currentStatusValue}"]`);
+        if (currentRadio) {
+            currentRadio.checked = true;
+            // Update button text with current status on load
+            updateSubmitButtonText(currentStatusValue.toUpperCase()); 
+        } else {
+            updateSubmitButtonText('Select Status');
+        }
+
+        document.getElementById('status-display-section').classList.remove('hidden');
+        document.getElementById('status-form').classList.remove('hidden');
+        document.getElementById('loading-indicator').classList.add('hidden');
+    }
+
+    /**
+     * Updates the visual badge for the current account status.
+     * @param {string} status - The current status string.
+     */
+    const displayCurrentStatus = (status) => {
+        const badge = document.getElementById('current-status-badge');
+        const normalizedStatus = status.toLowerCase();
+        
+        const style = STATUS_COLORS[normalizedStatus] || STATUS_COLORS['unknown'];
+
+        // Remove old background classes and add the new one
+        Object.values(STATUS_COLORS).forEach(s => badge.classList.remove(s.bg));
+        
+        badge.classList.add(style.bg);
+        badge.style.color = style.color; 
+        badge.textContent = status.toUpperCase();
+    }
+    
+    /**
+     * Updates the text on the submit button.
+     * @param {string} statusText - The status text to display.
+     */
+    const updateSubmitButtonText = (statusText) => {
+        const submitText = document.getElementById('submit-text');
+        // Add a safety check to prevent the 'Cannot set properties of null' error
+        if (submitText) {
+            submitText.textContent = `Set Status to: ${statusText}`;
+        }
+    }
+
+    /**
+     * Sets up event listeners for the status selection radio buttons.
+     */
+    const setupStatusSelection = () => {
+        const radioButtons = document.querySelectorAll('input[name="newStatus"]');
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const newStatus = event.target.value.toUpperCase();
+                updateSubmitButtonText(newStatus);
+            });
+        });
+    }
+
+
+    // --- Data Fetching (REAL API CALLS) ---
+
+    /**
+     * Fetches user details by ID from the real backend API.
+     */
+    const fetchUserDetails = async () => {
+        const token = localStorage.getItem('adminToken');
+        if (!token) { logoutAndRedirect(); return; }
+        if (!userId) { 
+            document.getElementById('loading-indicator').innerHTML = '<p class="text-red-600 font-bold">Error: Missing User ID in URL.</p><button onclick="goToUserList()" class="mt-4 text-bank-blue hover:underline">Go back to User List</button>';
+            showToast('Missing User ID in URL.', 'error'); 
+            return; 
+        }
+
+        const url = API_USER_DETAIL_URL + userId;
+        const loadingIndicator = document.getElementById('loading-indicator');
+        loadingIndicator.classList.remove('hidden');
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                logoutAndRedirect();
+                return;
+            }
+
+            if (!response.ok) {
+                const errorBody = await response.json().catch(() => ({ message: `HTTP error! Status: ${response.status}` }));
+                throw new Error(errorBody.message || `Failed to fetch user data: Status ${response.status}`);
+            }
+
+            const user = await response.json();
+            updateUI(user);
+
+        } catch (error) {
+            console.error("Fetch User Details Error:", error);
+            loadingIndicator.innerHTML = `<p class="text-red-600 font-bold">Error loading user: ${error.message}</p><button onclick="goToUserList()" class="mt-4 text-bank-blue hover:underline">Go back to User List</button>`;
+            showToast(`Error: ${error.message}`, 'error');
+        }
+    };
+
+    // --- Status Update Handling (REAL API CALL) ---
+
+    /**
+     * Handles the status update form submission by calling the assumed API.
+     */
+    window.handleStatusUpdate = async (event) => {
+        event.preventDefault();
+        
+        const token = localStorage.getItem('adminToken');
+        if (!token) { logoutAndRedirect(); return; }
+
+        const form = event.target;
+        // Get the value of the currently checked radio button
+        const newStatusInput = form.querySelector('input[name="newStatus"]:checked'); 
+        const reason = form.reason.value.trim();
+        
+        const submitBtn = document.getElementById('submit-btn');
+        const errorDisplay = document.getElementById('status-error');
+
+        errorDisplay.classList.add('hidden');
+        
+        // --- Client-Side Validation ---
+        if (!newStatusInput) {
+            errorDisplay.textContent = 'Please select a new status.';
+            errorDisplay.classList.remove('hidden');
+            showToast('Please select a new status.', 'error');
+            return;
+        }
+        const newStatus = newStatusInput.value;
+
+        if (reason.length < 10) {
+            errorDisplay.textContent = 'Please provide a detailed justification (at least 10 characters) for this critical change.';
+            errorDisplay.classList.remove('hidden');
+            showToast('Justification is too short (min 10 chars).', 'error');
+            return;
+        }
+        // --- End Validation ---
+
+        // Temporarily disable button and show loading text
+        submitBtn.disabled = true;
+        // CRITICAL FIX: The next line removes the span with id="submit-text"
+        submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Updating Status...</span>`;
+
+        const updateData = {
+            userId: userId,
+            newStatus: newStatus,
+            adminName: localStorage.getItem('adminName') || 'System Admin',
+            reason: reason
+        };
+
+        try {
+            // REAL API POST call to the status update endpoint
+            const response = await fetch(API_STATUS_UPDATE_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                logoutAndRedirect();
+                return;
+            }
+
+            const result = await response.json().catch(() => ({})); // Parse JSON or default to empty object
+            
+            if (!response.ok) {
+                // Handle server-side validation or business logic errors
+                throw new Error(result.message || `Server responded with status ${response.status}`);
+            }
+            
+            // Expected successful status might come from the response body, or use the client-selected one
+            const newStatusText = result.newStatus || newStatus;
+
+            showToast(`Status updated successfully for ${currentLiveUser.fullName}. New Status: ${newStatusText.toUpperCase()}`, 'success');
+            
+            // Clear the reason textarea and uncheck radios for the next action
+            document.getElementById('reason').value = '';
+            
+            // Update the UI immediately and then refresh data
+            currentLiveUser.status = newStatusText;
+            displayCurrentStatus(newStatusText);
+            
+            // Re-fetch for full sync (good practice)
+            await fetchUserDetails(); 
+
+        } catch (error) {
+            console.error("Status Update Error:", error);
+            errorDisplay.textContent = `Status update failed: ${error.message}`;
+            errorDisplay.classList.remove('hidden');
+            showToast(`Update Failed! ${error.message}`, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            
+            // 🔥 CRITICAL FIX: Restore the original button structure *before* attempting to update text.
+            submitBtn.innerHTML = `<span id="submit-text"></span>`; 
+
+            // Restore button text/icon after processing, updated to new selected status
+            const selectedStatus = document.querySelector('input[name="newStatus"]:checked')?.value.toUpperCase() || 'Select Status';
+            updateSubmitButtonText(selectedStatus);
+        }
+    };
+
+
+    // ----------------------------------------------------------------------
+    // --- INITIALIZATION ---
+    // ----------------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+        const token = localStorage.getItem('adminToken');
+
+        // 1. Check Auth Token
+        if (!token) {
+            logoutAndRedirect(); 
+            return;
+        }
+        
+        // 2. Get User ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        // This is the common ID parameter used by all your related pages
+        userId = urlParams.get('id'); 
+
+        // 3. Setup event listeners for the status selection
+        setupStatusSelection();
+
+        // 4. Fetch user data 
+        fetchUserDetails();
+    });
+</script>
+</body>
+</html>

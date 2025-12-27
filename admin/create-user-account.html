@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin: New Customer Onboarding</title>
+    <!-- Load Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font using standard link tag -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Removed all custom <style> blocks -->
+</head>
+
+<!-- 
+    Refactored body class:
+    - min-h-screen, flex flex-col, font-[Inter] handle basic layout and typography.
+    - The background image, cover, center, and fixed position are handled by JIT and utility classes.
+    - bg-gray-800 bg-blend-multiply creates the dark overlay effect without custom CSS.
+-->
+<body class="min-h-screen flex flex-col text-gray-800 font-[Inter] 
+             bg-[url('https://i.imgur.com/uKhPaS5.jpeg')] bg-cover bg-center bg-fixed 
+             bg-gray-800 bg-blend-multiply relative">
+
+    <header class="h-16 w-full p-4 flex items-center justify-between bg-black/50 backdrop-blur-md shadow-lg sticky top-0 z-20">
+        <h1 class="text-xl font-extrabold text-white tracking-wider sm:text-2xl">Account Creation (Admin)</h1>
+        <button onclick="goToPage('Dashboard')" 
+            class="bg-gray-600 text-white px-3 py-1 rounded-lg text-sm font-medium shadow-xl hover:bg-gray-700 transition duration-150 transform hover:scale-[1.03]">
+            &larr; Back to Dashboard
+        </button>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center p-4 relative z-10">
+        
+        <!-- Increased max-width for a better desktop/tablet experience -->
+        <div class="w-full max-w-4xl">
+            <div id="create-account-form-container" class="bg-white/95 backdrop-blur-lg p-6 md:p-10 rounded-3xl shadow-2xl w-full transition-all duration-300 mb-8 border border-gray-200">
+                
+                <!-- Used JIT color class for the bank blue -->
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-[#0076a3] mb-4 border-b pb-3">New Customer Onboarding</h2>
+                <p class="text-base text-gray-600 mb-8">Enter the required details to open a new user account and financial portfolio.</p>
+
+                <form id="newUserForm" onsubmit="submitForm(event)" enctype="multipart/form-data">
+                    
+                    <div class="space-y-6">
+                        
+                        <!-- Responsive grid updated to md:grid-cols-2 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="userIdName" class="block text-sm font-semibold text-gray-700">User ID Name (Username)</label>
+                                <input type="text" id="userIdName" name="userIdName" required minlength="5"
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                        placeholder="E.g., jane_doe24">
+                                <p class="mt-1 text-xs text-gray-500">The user's primary login identifier (Min 5 characters).</p>
+                            </div>
+                            <div>
+                                <label for="userPassword" class="block text-sm font-semibold text-gray-700">User Password</label>
+                                <input type="password" id="userPassword" name="userPassword" required minlength="8"
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                        placeholder="Min 8 characters">
+                                <p class="mt-1 text-xs text-gray-500">The user's primary login password.</p>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="fullName" class="block text-sm font-semibold text-gray-700">Full Name</label>
+                            <input type="text" id="fullName" name="fullName" required 
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                    placeholder="Jane Marie Doe">
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-semibold text-gray-700">Email Address</label>
+                            <input type="email" id="email" name="email" required 
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                    placeholder="jane.doe@example.com">
+                            <p class="mt-1 text-xs text-gray-500">The customer's primary contact email for communication.</p>
+                        </div>
+
+                        <div>
+                            <label for="profilePicture" class="block text-sm font-semibold text-gray-700">Profile Picture (Optional)</label>
+                            <!-- File input styling updated using JIT colors for file:: utilities -->
+                            <input type="file" id="profilePicture" name="profilePicture" accept="image/*"
+                                    class="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-xl cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] 
+                                            file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-[#0076a3] file:text-white hover:file:bg-[#005f82] transition duration-150">
+                            <p class="mt-1 text-xs text-gray-500">PNG, JPG, or GIF (Max 1MB).</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="dob" class="block text-sm font-semibold text-gray-700">Date of Birth</label>
+                                <input type="date" id="dob" name="dob" required 
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150">
+                            </div>
+                            
+                            <div>
+                                <label for="gender" class="block text-sm font-semibold text-gray-700">Gender</label>
+                                <select id="gender" name="gender" required
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base appearance-none bg-white transition duration-150">
+                                    <option value="" disabled selected>Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Non-Binary">Non-Binary</option>
+                                    <option value="Prefer Not To Say">Prefer Not To Say</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="address" class="block text-sm font-semibold text-gray-700">Address</label>
+                            <input type="text" id="address" name="address" required 
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                    placeholder="123 Main St, City, Zip">
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="occupation" class="block text-sm font-semibold text-gray-700">Occupation</label>
+                                <input type="text" id="occupation" name="occupation" required 
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                        placeholder="Software Engineer">
+                            </div>
+                            
+                            <div>
+                                <label for="transferPin" class="block text-sm font-semibold text-gray-700">4-Digit Transfer PIN (Admin Set)</label>
+                                <input type="text" id="transferPin" name="transferPin" required maxlength="4" minlength="4" pattern="\d{4}"
+                                        class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base transition duration-150"
+                                        placeholder="E.g., 1234">
+                                <p class="mt-1 text-xs text-gray-500">This must be exactly 4 numeric digits for security.</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="currency" class="block text-sm font-semibold text-gray-700">Primary Account Currency</label>
+                            <select id="currency" name="currency" required
+                                    class="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#0076a3] focus:border-[#0076a3] sm:text-base appearance-none bg-white transition duration-150">
+                                <option value="" disabled selected>Select Currency</option>
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="AUD">AUD - Australian Dollar</option>
+                                <option value="CAD">CAD - Canadian Dollar</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Both checking and savings accounts will be created in this currency.</p>
+                        </div>
+
+                    </div>
+
+                    <!-- Button uses JIT colors and added hover/focus effects -->
+                    <button type="submit" id="submitButton"
+                                    class="w-full mt-8 bg-[#0076a3] text-white font-extrabold text-lg py-3 px-4 rounded-xl shadow-xl hover:bg-[#005f82] focus:outline-none focus:ring-4 focus:ring-offset-2 focus:ring-[#0076a3] transition duration-200 transform hover:scale-[1.01]">
+                        Create Account & Activate
+                    </button>
+                </form>
+            </div>
+            
+            <div id="account-details-display" class="hidden bg-white/95 backdrop-blur-lg p-6 md:p-8 rounded-3xl shadow-2xl w-full border border-gray-200">
+                <h3 class="text-xl sm:text-2xl font-bold text-[#0076a3] mb-4 border-b pb-2">Generated Checking & Savings Account Details</h3>
+                <p class="text-sm text-gray-600 mb-4">The domestic banking details for the selected currency accounts are generated below.</p>
+                <div id="details-table-container">
+                    <!-- The table generated by generateDetails has been made more responsive -->
+                </div>
+            </div>
+
+            <div id="message-box" class="fixed top-0 left-0 w-full p-4 hidden">
+            </div>
+        </div>
+
+        <p id="user-id-data" class="hidden"></p>
+    </main>
+
+    <!-- Added a simple footer for better structure -->
+    <footer class="w-full p-2 text-center text-xs text-white/70 bg-black/40 backdrop-blur-sm">
+        &copy; 2024 Fictional Bank, Admin Portal. Security Level 5.
+    </footer>
+
+    <script>
+    // Constants for DOM elements
+    const messageBox = document.getElementById('message-box');
+    const detailsDisplay = document.getElementById('account-details-display');
+    const detailsTableContainer = document.getElementById('details-table-container');
+    const loginPage = 'admin-login.html'; // Define the login page URL
+
+    // --- HELPER FUNCTIONS ---
+
+    /**
+     * Displays a temporary message at the top of the screen.
+     * @param {string} message - The message text.
+     * @param {string} bgColorClass - Tailwind class for the background color.
+     */
+    function showMessage(message, bgColorClass) {
+        messageBox.className = 'fixed top-0 left-0 w-full p-4 text-white text-center shadow-xl transition-all duration-300 z-50';
+        messageBox.classList.remove('hidden');
+        messageBox.classList.add(bgColorClass);
+        messageBox.innerHTML = `<p>${message}</p>`;
+
+        setTimeout(() => {
+            messageBox.classList.add('hidden');
+        }, 4000);
+    }
+
+    /**
+     * Handles navigation for the header button.
+     */
+    window.goToPage = function(pageName) {
+        if (pageName === 'Dashboard') {
+            // Redirect to the admin dashboard file
+            window.location.href = 'admin-dashboard.html'; 
+        } else {
+            showMessage(`Navigating to: ${pageName}.`, 'bg-gray-500');
+        }
+    }
+    
+    // --- ACCOUNT DETAILS CONFIG ---
+    const getCurrencyConfig = (code) => ([
+        { code: 'USD', name: 'US Dollar', swift: 'BANKUSNY', domesticLabel: 'ABA Routing Number', ibanPrefix: '' },
+        { code: 'EUR', name: 'Euro', swift: 'BANKDEFF', domesticLabel: 'IBAN', ibanPrefix: 'DE' },
+        { code: 'GBP', name: 'British Pound', swift: 'BANKGB2L', domesticLabel: 'Sort Code', ibanPrefix: 'GB' },
+        { code: 'AUD', name: 'Australian Dollar', swift: 'BANKAU2S', domesticLabel: 'BSB Number', ibanPrefix: 'AU' },
+        { code: 'CAD', name: 'Canadian Dollar', swift: 'BANKCA3V', domesticLabel: 'Transit/Institution No.', ibanPrefix: 'CA' }
+    ].find(c => c.code === code));
+
+    /**
+     * Renders the account details table for both checking and savings accounts.
+     * The table logic uses responsive classes like overflow-x-auto and hidden sm/lg:table-cell.
+     * @param {object} accountsData - Object containing checkingAccount and savingsAccount.
+     */
+    window.generateDetails = function(accountsData = null) {
+        if (!accountsData || (!accountsData.checkingAccount && !accountsData.savingsAccount)) {
+            detailsDisplay.classList.add('hidden');
+            return;
+        }
+
+        const accounts = [];
+        // Add Checking Account
+        if (accountsData.checkingAccount) {
+            accounts.push({
+                type: 'CHECKING',
+                data: accountsData.checkingAccount,
+                colorClasses: 'bg-indigo-50 border-indigo-600',
+                badgeClasses: 'bg-indigo-200 text-indigo-800'
+            });
+        }
+        // Add Savings Account
+        if (accountsData.savingsAccount) {
+            accounts.push({
+                type: 'SAVINGS',
+                data: accountsData.savingsAccount,
+                colorClasses: 'bg-green-50 border-green-600',
+                badgeClasses: 'bg-green-200 text-green-800'
+            });
+        }
+
+        if (accounts.length === 0) {
+            detailsDisplay.classList.add('hidden');
+            return;
+        }
+        
+        // Use the currency code from the first available account to configure labels
+        const selectedCurrencyCode = accounts[0].data.currencyCode;
+        const selectedCurrency = getCurrencyConfig(selectedCurrencyCode);
+
+        let tableHtml = `
+            <div class="overflow-x-auto rounded-xl border border-gray-300 shadow-md">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Type / Currency</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Account Number</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">${selectedCurrency.domesticLabel}</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden lg:table-cell">SWIFT / BIC</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider hidden sm:table-cell">IBAN (Intl.)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">`;
+
+        // Generate a table row for each account
+        accounts.forEach(account => {
+            tableHtml += `
+                <tr class="${account.colorClasses} font-semibold border-2 border-dashed transition duration-150 hover:bg-opacity-70">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                        ${selectedCurrency.code} 
+                        <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${account.badgeClasses}">
+                            ${account.type}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-mono">${account.data.accountNumber}</td>
+                    <td class="px-4 py-3 whitespace-normal text-sm text-gray-900 font-mono">
+                        <!-- Shows label on mobile for clarity -->
+                        <span class="text-xs text-gray-500 block md:hidden">${selectedCurrency.domesticLabel}:</span> 
+                        ${account.data.domesticRouting}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono hidden lg:table-cell">${selectedCurrency.swift}</td>
+                    <td class="px-4 py-3 whitespace-normal text-sm text-gray-600 font-mono hidden sm:table-cell">${account.data.iban}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `</tbody></table></div>`;
+        
+        detailsTableContainer.innerHTML = tableHtml;
+        detailsDisplay.classList.remove('hidden');
+        
+        // Scroll to the details section after display
+        detailsDisplay.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ----------------------------------------------------------------------
+    // --- CORE FUNCTION: REAL API SUBMISSION ---
+    // ----------------------------------------------------------------------
+
+    /**
+     * Handles form submission, prepares FormData, and sends a real POST request to the server.
+     */
+    window.submitForm = async function(event) {
+        event.preventDefault();
+
+        const form = document.getElementById('newUserForm');
+        const submitButton = document.getElementById('submitButton');
+        const formData = new FormData(form); 
+        
+        // Manual client-side validation for early feedback
+        const userIdName = formData.get('userIdName');
+        const userPassword = formData.get('userPassword');
+        const email = formData.get('email'); // <-- Get new email field
+        const dob = formData.get('dob');
+        const pin = formData.get('transferPin');
+
+        if (userIdName.length < 5) {
+            showMessage('Validation Error: User ID Name must be at least 5 characters long.', 'bg-red-600');
+            return;
+        }
+        if (userPassword.length < 8) {
+            showMessage('Validation Error: User Password must be at least 8 characters long.', 'bg-red-600');
+            return;
+        }
+        
+        // Simple email format validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showMessage('Validation Error: Please enter a valid Email Address.', 'bg-red-600');
+            return;
+        }
+
+        if (new Date(dob) > new Date()) {
+            showMessage('Validation Error: Date of Birth cannot be in the future.', 'bg-red-600');
+            return;
+        }
+        if (!/^\d{4}$/.test(pin)) {
+            showMessage('Validation Error: Transfer PIN must be exactly 4 numeric digits.', 'bg-red-600');
+            return;
+        }
+        
+        submitButton.disabled = true;
+        submitButton.textContent = 'Creating Account...';
+        showMessage('Sending data to server...', 'bg-yellow-500');
+
+        try {
+            // 🔥 REAL API CALL USING fetch
+            const token = localStorage.getItem('adminToken'); // Get the token
+
+            const response = await fetch('/api/users', {
+                method: 'POST',
+                // JWT UPDATE: Include Authorization Header
+                headers: {
+                    'Authorization': `Bearer ${token}` 
+                },
+                body: formData // FormData handles the 'Content-Type' for files
+            });
+
+            // If a response is received but status is 401/403 (unauthorized/forbidden)
+            if (response.status === 401 || response.status === 403) {
+                localStorage.removeItem('adminToken');
+                localStorage.removeItem('adminName');
+                showMessage('Session expired. Please log in again.', 'bg-red-700');
+                setTimeout(() => { window.location.href = loginPage; }, 1500);
+                return;
+            }
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Success
+                showMessage(`✅ ${result.message} User ID: ${result.userId}`, 'bg-green-600');
+                
+                // CORE CORRECTION: Extract Checking and Savings from the 'accounts' ARRAY
+                const checkingAccount = result.accounts.find(a => a.accountType === 'Checking');
+                const savingsAccount = result.accounts.find(a => a.accountType === 'Savings');
+                
+                // Display the actual Checking and Savings account details generated by the server
+                generateDetails({
+                    checkingAccount: checkingAccount,
+                    savingsAccount: savingsAccount
+                }); 
+                
+                // Clear the form after successful submission
+                form.reset();
+
+            } else {
+                // Server validation error or unique key violation (400, 409)
+                console.error('Server Error:', result.message);
+                showMessage(`❌ Failed: ${result.message}`, 'bg-red-600');
+            }
+
+        } catch (error) {
+            console.error("Network or Fetch Error:", error);
+            showMessage('❌ A network error occurred. Check server status.', 'bg-red-700');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Create Account & Activate';
+        }
+    }
+
+
+    // ----------------------------------------------------------------------
+    // --- JWT: INITIAL AUTHENTICATION CHECK ON LOAD ---
+    // ----------------------------------------------------------------------
+
+    window.onload = function() {
+        const token = localStorage.getItem('adminToken');
+
+        // Check for token presence
+        if (!token) {
+            console.warn("No admin token found. Redirecting to login.");
+            showMessage("Unauthorized access. Redirecting to login.", 'bg-red-700');
+            setTimeout(() => {
+                window.location.href = loginPage;
+            }, 1500);
+            return; // Stop execution if no token is found
+        }
+        
+        console.log("Admin page loaded successfully with valid token.");
+        
+        // Initial call to hide details display
+        detailsDisplay.classList.add('hidden');
+    };
+
+</script>
+</body>
+</html>

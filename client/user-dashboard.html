@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sunflower Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // TAILWIND CONFIGURATION
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Defined for reuse across the app
+                        'bank-blue': '#0076a3', // Deep Cyan/Teal
+                        'bank-yellow': '#ffc42a', // Vibrant Sunflower Yellow
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* * Essential custom CSS for complex dynamic components (modal, sidebar animation, spinner) 
+         * that cannot be achieved with pure utility classes alone.
+         */
+
+        /* Style for the custom alert/modal: Fixed position, transform, z-index, custom shadow/border */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; 
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid #ffc42a; /* bank-yellow */
+            max-width: 90%;
+            width: 400px; /* Constrain width for better look */
+        }
+
+        /* Sidebar Custom Styles: Fixed position, full height, off-screen by default, with transition */
+        .sidebar {
+            width: 280px; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            z-index: 50;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-out;
+            /* Box shadow is also handled by utility class: shadow-xl */
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Backdrop to close sidebar on click: Fixed position, full cover, transition for opacity */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-out;
+        }
+        .sidebar-backdrop.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Loading Spinner Animation */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border-left-color: #ffc42a; /* bank-yellow */
+            animation: spin 1s ease infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Mobile-first adjustment for header spacing - now done with pt-2 in header and padding-bottom: 2rem is removed. */
+
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans flex flex-col">
+    
+    <div id="message-box-container" class="hidden"></div>
+    
+    <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+    <nav id="sidebar" class="sidebar bg-white p-6 shadow-xl flex flex-col justify-between">
+        <div>
+            <div class="flex justify-between items-center pb-6 border-b border-gray-100">
+                <div class="flex items-center text-2xl font-bold text-bank-blue">
+                    <img src="https://placehold.co/30x30/0076a3/ffffff?text=SB" onerror="this.onerror=null;this.src='https://placehold.co/30x30/0076a3/ffffff?text=SB';" alt="Logo" class="mr-3 rounded-full">
+                    Menu
+                </div>
+                <button id="close-sidebar-button" class="text-gray-500 hover:text-bank-blue transition p-1" onclick="toggleSidebar()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            
+           <ul class="pt-4 space-y-2">
+    <li>
+        <a href="user-dashboard.html" class="flex items-center p-3 text-base font-semibold text-bank-blue bg-bank-yellow/30 rounded-lg transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2.586l1.293 1.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+            Dashboard
+        </a>
+    </li>
+    <li>
+        <a href="/client/transfer.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            Transfer Funds
+        </a>
+    </li>
+    <li>
+        <a href="/client/profile.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            Profile
+        </a>
+    </li>
+    <li>
+        <a href="/client/settings.html" class="flex items-center p-3 text-base font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition duration-150">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.827 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.827 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.827-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.827-3.31 2.37-2.37h.003z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+            Settings
+        </a>
+    </li>
+</ul>
+        
+        <button id="sidebar-logout-button" class="flex items-center p-3 text-base font-medium text-red-600 rounded-lg hover:bg-red-50 transition duration-150 mt-4" onclick="handleLogout()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            Log Out
+        </button>
+    </nav>
+    
+    <div class="absolute top-0 left-0 w-full h-40 bg-bank-blue z-0"></div>
+
+    <div class="relative z-10 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full flex-grow">
+
+        <header class="flex justify-between items-start mb-6 pt-2">
+            <div class="flex items-center space-x-4">
+                <button id="menu-button" class="text-white cursor-pointer p-1 -ml-1 md:-ml-2" onclick="toggleSidebar()" aria-expanded="false" aria-controls="sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
+                </button>
+                <div id="greeting-text" class="text-xl sm:text-2xl md:text-3xl font-semibold text-white mt-1">
+                    Hi, Loading...
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3 sm:space-x-4 pt-1">
+                <button id="logout-button" class="text-sm text-white/80 hover:text-white font-medium transition duration-150 p-2 rounded-lg hidden sm:block" onclick="handleLogout()">
+                    Log Out
+                </button>
+                <div id="user-avatar" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-bank-yellow flex items-center justify-center text-white font-bold text-lg overflow-hidden border-2 border-white shadow-md flex-shrink-0">
+                    <img id="avatar-img" src="https://placehold.co/48x48/ffc42a/0076a3?text=SB" onerror="this.onerror=null;this.src='https://placehold.co/48x48/ffc42a/0076a3?text=SB';" alt="User Avatar" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+        
+        <div id="account-balances-container" class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6 mb-8">
+            <div id="checking-account-card" class="hidden bg-bank-blue p-5 sm:p-6 rounded-xl shadow-lg border border-gray-50 flex-1 text-white transition hover:scale-[1.01] duration-300 cursor-pointer">
+                <p class="text-sm font-medium opacity-90">Sunflower Checking</p>
+                <p id="checking-number" class="text-xs font-mono opacity-70">xXXXX</p>
+                <p id="checking-balance" class="text-4xl font-extrabold mt-3">$0.00</p>
+                <p class="text-xs opacity-70 mt-1">Available Balance</p>
+            </div>
+
+            <div id="savings-account-card" class="hidden bg-white p-5 sm:p-6 rounded-xl shadow-xl border border-gray-50 flex-1 transition hover:scale-[1.01] duration-300 cursor-pointer">
+                <p class="text-sm font-medium text-gray-500">Sunflower Savings</p>
+                <p id="savings-number" class="text-xs font-mono text-gray-400">xYYYY</p>
+                <p id="savings-balance" class="text-4xl font-extrabold mt-3 text-gray-800">$0.00</p>
+                <p class="text-xs text-gray-500 mt-1">Available Balance</p>
+            </div>
+        </div>
+
+       <div class="bg-bank-yellow p-4 rounded-xl shadow-xl mb-8">
+    <div class="flex justify-around">
+        
+        <button onclick="window.location.href='/client/transfer.html'" class="flex flex-col items-center p-2 w-1/4 transition transform hover:scale-105 active:scale-95 text-gray-800 focus:outline-none">
+            <div class="p-3 sm:p-4 bg-white rounded-full mb-1 shadow-md hover:shadow-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-bank-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+            </div>
+            <span class="text-xs sm:text-sm font-medium mt-1">Transfer</span>
+        </button>
+        
+        <button onclick="window.location.href='/client/deposit.html'" class="flex flex-col items-center p-2 w-1/4 transition transform hover:scale-105 active:scale-95 text-gray-800 focus:outline-none">
+            <div class="p-3 sm:p-4 bg-white rounded-full mb-1 shadow-md hover:shadow-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-bank-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+            </div>
+            <span class="text-xs sm:text-sm font-medium mt-1">Deposit</span>
+        </button>
+        
+        <button onclick="window.location.href='/client/card.html'" class="flex flex-col items-center p-2 w-1/4 transition transform hover:scale-105 active:scale-95 text-gray-800 focus:outline-none">
+            <div class="p-3 sm:p-4 bg-white rounded-full mb-1 shadow-md hover:shadow-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-bank-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+            </div>
+            <span class="text-xs sm:text-sm font-medium mt-1">Bank Card</span>
+        </button>
+        
+        <button onclick="window.location.href='/client/message.html'" class="flex flex-col items-center p-2 w-1/4 transition transform hover:scale-105 active:scale-95 text-gray-800 focus:outline-none">
+            <div class="p-3 sm:p-4 bg-white rounded-full mb-1 shadow-md hover:shadow-lg transition">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-bank-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" /></svg>
+            </div>
+            <span class="text-xs sm:text-sm font-medium mt-1">Message</span>
+        </button>
+        
+    </div>
+</div>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-50">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-semibold text-gray-800">Recent Transactions</h2>
+                <button onclick="window.location.href = '/client/transaction.html';" class="text-bank-blue font-semibold text-sm hover:underline flex items-center">
+                    View All
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+
+            <div id="transactions-list" class="space-y-3 text-sm -mx-3 sm:-mx-6 pt-2">
+                <p class="text-center text-gray-500 flex items-center justify-center space-x-2 py-4">
+                    <span class="spinner mr-2"></span> <span>Loading transactions...</span>
+                </p>
+            </div>
+        </div>
+
+    </div>
+    
+    <div class="lg:col-span-1 space-y-6">
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-50">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Messages & Offers</h2>
+            <div class="border-l-4 border-bank-yellow pl-4 py-3 bg-gray-50 rounded-md">
+                <p class="font-medium text-gray-700">New Card Alert! 💳</p>
+                <p class="text-xs text-gray-500 mt-1">Activate your new Sunflower Platinum Card today to earn 2x rewards on groceries.</p>
+            </div>
+        </div>
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-lg border border-gray-50">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Contact</h2>
+            <p class="text-sm text-gray-600 mb-4">Need help? We're here for you.</p>
+            <div class="space-y-2">
+                <button onclick="showMessage('Call us at 888.833.5961 anytime.', 'Support Phone')" class="w-full text-left flex items-center p-3 rounded-lg bg-bank-blue text-white hover:bg-bank-blue/90 transition shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.5l1 4.5 1.5 1.5-1.5 1.5 1.5 1.5 1.5 1.5 4.5 1 4.5 1-4.5 1-4.5-1-4.5 1H5a2 2 0 01-2-2V5z" /></svg>
+                    <span class="font-medium">Call Support 24/7</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+</main>
+
+    </div>
+
+    <footer class="w-full p-4 bg-white shadow-inner mt-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between text-xs text-gray-500 space-y-4 md:space-y-0">
+            
+            <div class="flex items-center space-x-2">
+                <div class="flex items-center bg-bank-blue text-white p-1 rounded font-mono">
+                    <p class="font-bold text-sm">SUNFLOWER</p><span class="text-xs ml-1">.Union</span>
+                </div>
+            </div>
+            
+            <div class="text-center md:text-left space-y-1">
+                <p>Routing Number: 101130607 | Consumer Service: 888.833.5961</p>
+                <p>&copy; 2019 First National 1978, a division of Sunflower, N.A. All Rights Reserved.</p>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING" onerror="this.onerror=null;this.src='https://placehold.co/40x20/0076a3/ffffff?text=EQUAL+HOUSING';" alt="Equal Housing Lender" class="h-5">
+                <img src="https://placehold.co/40x20/0076a3/ffffff?text=FDIC" onerror="this.onerror=null;this.src='https://placehold.co/40x20/0076a3/ffffff?text=FDIC';" alt="FDIC" class="h-5">
+            </div>
+        </div>
+    </footer>
+    <script>
+    // --- Configuration: MUST MATCH THE KEYS/STORAGE USED IN THE LOGIN SCRIPT ---
+    const API_DASHBOARD_URL = '/api/client/dashboard'; 
+    const SESSION_KEY_TOKEN = 'userToken'; 
+    const USER_ID_KEY = 'currentUserId';
+    const USER_NAME_KEY = 'currentUserName';
+    // FIX: Changed login page URL to relative path to account for nested client folder
+    const LOGIN_PAGE_URL = '../index.html'; 
+
+    // --- UI Utility Functions ---
+
+    /**
+     * Displays a custom alert message in a modal-like box.
+     * @param {string} message The message content.
+     * @param {string} title The title for the message box.
+     */
+    function showMessage(message, title = 'Notification') {
+        const container = document.getElementById('message-box-container');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="message-box bg-white p-6 rounded-xl text-center">
+                <h3 class="text-xl font-bold text-bank-blue mb-3">${title}</h3>
+                <p class="text-gray-600">${message}</p>
+                <button onclick="hideMessage()" class="mt-4 py-2 px-5 bg-bank-blue text-white rounded-lg transition hover:bg-bank-blue/80">Close</button>
+            </div>
+            <div class="sidebar-backdrop open"></div> 
+        `;
+        container.classList.remove('hidden');
+    }
+
+    /**
+     * Hides the custom alert message.
+     */
+    function hideMessage() {
+        const container = document.getElementById('message-box-container');
+        container.classList.add('hidden');
+        container.innerHTML = '';
+    }
+
+    /**
+     * Handles navigation actions, showing a message for demo links.
+     * @param {string} url The target URL.
+     * @param {string} name The name of the action/page.
+     */
+    function handleAction(url, name) {
+        toggleSidebar(false); 
+        showMessage(`This is a demo dashboard. In a real application, clicking '${name}' would navigate to the ${name} page at: ${url}`, 'Feature Demo');
+    }
+
+    /**
+     * Toggles the mobile sidebar open or closed.
+     * @param {boolean} [force] Optional: true to force open, false to force close.
+     */
+    function toggleSidebar(force) {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebar-backdrop');
+        if (!sidebar || !backdrop) return;
+        
+        const isCurrentlyOpen = sidebar.classList.contains('open');
+        const shouldOpen = force === true || (force === undefined && !isCurrentlyOpen);
+
+        sidebar.classList.toggle('open', shouldOpen);
+        backdrop.classList.toggle('open', shouldOpen);
+        document.getElementById('menu-button').setAttribute('aria-expanded', shouldOpen);
+    }
+
+    /**
+     * Handles the logout process by clearing all relevant storage and redirecting.
+     * @param {boolean} clearSession - Whether to clear the session storage.
+     */
+    function handleLogout(clearSession = true) {
+        console.log('Logging out...');
+        if (clearSession) {
+            // Clear the session storage keys used for authentication
+            sessionStorage.removeItem(SESSION_KEY_TOKEN); 
+            sessionStorage.removeItem(USER_ID_KEY);
+            sessionStorage.removeItem(USER_NAME_KEY);
+        }
+        
+        // Redirect to login page using the defined relative path
+        window.location.href = LOGIN_PAGE_URL;
+    }
+    
+    
+    /**
+     * Helper function to format currency as $X,XXX.XX.
+     * @param {number} amount
+     */
+    function formatCurrency(amount, currency = 'USD') {
+        // CRITICAL FIX: Use Math.abs() to ensure the balance is displayed as a positive number.
+        const absoluteAmount = Math.abs(amount); 
+        
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            // Note: The server should pass the user's currency. Defaulting to USD for demo.
+            currency: currency, 
+        }).format(absoluteAmount); // Now formats the absolute value
+    }
+    
+    /**
+     * Helper function to return the Tailwind CSS classes and text for the transaction status badge.
+     * @param {string} status - The transaction status (e.g., 'Successful', 'Failed').
+     */
+    function getTransactionStatusBadge(status) {
+        let text = status.toUpperCase();
+        let classes = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ';
+
+        switch (text) {
+            case 'SUCCESSFUL':
+            case 'APPROVED':
+                classes += 'bg-green-100 text-green-800';
+                break;
+            case 'FAILED':
+            case 'REJECTED':
+            case 'DECLINED':
+                classes += 'bg-red-100 text-red-800';
+                break;
+            case 'PROCESSING':
+            case 'PENDING':
+                classes += 'bg-yellow-100 text-yellow-800';
+                break;
+            case 'REFUNDED':
+                classes += 'bg-bank-blue/20 text-bank-blue';
+                break;
+            default:
+                classes += 'bg-gray-100 text-gray-800';
+                break;
+        }
+        return `<span class="${classes}">${text}</span>`;
+    }
+
+
+    // --- Core API Logic ---
+
+    /**
+     * Checks for the token, redirects if unauthorized, or fetches data.
+     */
+    function initializeDashboard() {
+        const token = sessionStorage.getItem(SESSION_KEY_TOKEN);
+        
+        if (!token) {
+            console.error('No authentication token found. Redirecting to login.');
+            handleLogout(false); 
+            return;
+        }
+
+        // Update Greeting with Cached Name
+        const userName = sessionStorage.getItem(USER_NAME_KEY) || 'Valued Customer';
+        const greetingElement = document.getElementById('greeting-text');
+        if (greetingElement) {
+            const firstName = userName.split(' ')[0] || 'Customer';
+            greetingElement.textContent = `Hi, ${firstName}`;
+        }
+
+        fetchDashboardData(token);
+    }
+
+    /**
+     * Fetches protected dashboard data from the backend API using the JWT.
+     * @param {string} token - The JWT for authorization.
+     */
+    async function fetchDashboardData(token) {
+        try {
+            const response = await fetch(API_DASHBOARD_URL, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}` 
+                }
+            });
+
+            const responseJson = await response.json();
+            const data = responseJson.data; // Expecting { success: true, data: { ... } }
+
+            if (response.ok && responseJson.success && data) {
+                renderDashboard(data);
+            } else if (response.status === 401 || response.status === 403) {
+                showMessage('Your session has expired. Please log in again.', 'Session Expired');
+                setTimeout(() => handleLogout(true), 2000); 
+            } else {
+                console.error('Server returned error:', responseJson.message);
+                showMessage(responseJson.message || 'Failed to load dashboard data. Please try again.', 'Data Error');
+                renderLoadingError();
+            }
+        } catch (error) {
+            console.error('Network or server connection error:', error);
+            showMessage('Cannot connect to the bank server. Please check your network connection.', 'Connection Error');
+            renderLoadingError();
+        }
+    }
+
+    /**
+     * Updates the DOM with the fetched user data.
+     * @param {Object} data - The user and account data from the API.
+     */
+    function renderDashboard(data) {
+        // 1. Update User Greeting and Avatar
+        const fullName = data.fullName || sessionStorage.getItem(USER_NAME_KEY) || 'Valued Customer';
+        const currency = data.currency || 'USD'; // Use currency from API
+        const greetingElement = document.getElementById('greeting-text');
+        const userAvatarDiv = document.getElementById('user-avatar'); // Targeting the div for text/initial
+        
+        
+       // --- PROFILE PICTURE LOGIC ---
+        if (userAvatarDiv) {
+            // Clear existing content (initial or previous image)
+            userAvatarDiv.textContent = ''; 
+            
+            const profilePath = data.profilePicturePath;
+            const initial = fullName.charAt(0).toUpperCase();
+
+            if (profilePath) {
+                // Option A: Use the path provided by the API (e.g., /uploads/mary.jpg)
+                const img = document.createElement('img');
+                img.id = 'avatar-img'; // Re-use the ID for consistency, though it's inside the div now
+                img.src = profilePath;
+                img.alt = `${fullName}'s Profile Picture`;
+                // Add necessary Tailwind classes for styling (w-full h-full object-cover)
+                img.className = 'w-full h-full object-cover'; 
+                
+                // Add an error handler for the image, falling back to initials if the image path is bad
+                img.onerror = function() {
+                    console.error('Failed to load profile picture from path. Falling back to initials.');
+                    userAvatarDiv.textContent = initial; // Fallback to initial
+                    this.remove(); // Remove the broken img tag
+                };
+
+                userAvatarDiv.appendChild(img);
+            } else {
+                // Option B: Fallback to using the user's initial if no path is provided
+                userAvatarDiv.textContent = initial;
+            }
+        }
+        // 2. Render Accounts
+        // Ensure account properties match the server's output (accountNumber, accountType, balance)
+        const checkingAccount = data.accounts.find(acc => acc.accountType.toLowerCase() === 'checking');
+        const savingsAccount = data.accounts.find(acc => acc.accountType.toLowerCase() === 'savings');
+
+        if (checkingAccount) {
+            const checkingCard = document.getElementById('checking-account-card');
+            document.getElementById('checking-number').textContent = '...' + checkingAccount.accountNumber.slice(-4);
+            document.getElementById('checking-balance').textContent = formatCurrency(checkingAccount.balance, currency);
+            checkingCard.classList.remove('hidden');
+        }
+        
+        if (savingsAccount) {
+            const savingsCard = document.getElementById('savings-account-card');
+            document.getElementById('savings-number').textContent = '...' + savingsAccount.accountNumber.slice(-4);
+            document.getElementById('savings-balance').textContent = formatCurrency(savingsAccount.balance, currency);
+            savingsCard.classList.remove('hidden');
+        }
+
+        // 3. Render Transactions (Expected from server: data.transactions)
+        const transactionsList = document.getElementById('transactions-list');
+        transactionsList.innerHTML = ''; // Clear the 'Loading' message
+
+        // Note: data.transactions must be added to the server's fetchClientProfileFromDB function.
+        const transactions = data.transactions || []; 
+
+        if (transactions.length > 0) {
+            transactions.slice(0, 5).forEach(tx => {
+                const isCredit = tx.amount > 0;
+                const amountClass = isCredit ? 'text-green-600' : 'text-red-600';
+                const sign = isCredit ? '+' : ''; 
+                
+                // ⭐️ NEW: Get the status badge HTML
+                const statusBadgeHtml = getTransactionStatusBadge(tx.status || 'Unknown'); // Use tx.status
+                
+                const txElement = document.createElement('div');
+                txElement.className = 'flex items-center justify-between p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 rounded-md transition';
+                txElement.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="p-2 rounded-full ${isCredit ? 'bg-green-100' : 'bg-red-100'} text-bank-blue">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="${isCredit ? 'M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z' : 'M10 18a8 8 0 100-16 8 8 0 000 16zM9 9V7a1 1 0 012 0v2h2a1 1 0 010 2h-2v2a1 1 0 01-2 0v-2H7a1 1 0 110-2h2z'}" clip-rule="evenodd" />
+                            </svg>
+                        </span>
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-3">
+                            <p class="font-medium text-gray-800">${tx.description}</p>
+                            <div class="flex items-center space-x-2 mt-0.5 sm:mt-0">
+                                ${statusBadgeHtml}
+                                <p class="text-xs text-gray-400">${new Date(tx.date).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="font-semibold text-right ${amountClass} flex-shrink-0">
+                        ${sign}${formatCurrency(Math.abs(tx.amount), currency)}
+                    </p>
+                `;
+                transactionsList.appendChild(txElement);
+            });
+        } else {
+            transactionsList.innerHTML = '<p class="text-center text-gray-500 py-4">No recent transactions found.</p>';
+        }
+    }
+
+    /**
+     * Renders an error state for transactions/accounts if API fails.
+     */
+    function renderLoadingError() {
+        const transactionsList = document.getElementById('transactions-list');
+        transactionsList.innerHTML = `
+            <p class="text-center text-red-500 py-4 font-medium">
+                Failed to load recent data. Please refresh or try again later.
+            </p>
+        `;
+        document.getElementById('checking-account-card').classList.add('hidden');
+        document.getElementById('savings-account-card').classList.add('hidden');
+    }
+
+    // --- Event Listeners and Initialization ---
+
+    // Make utility functions globally accessible to inline HTML handlers
+    window.toggleSidebar = toggleSidebar;
+    window.handleAction = handleAction;
+    window.handleLogout = handleLogout;
+    window.showMessage = showMessage;
+    window.hideMessage = hideMessage;
+    // Expose the new utility function
+    window.getTransactionStatusBadge = getTransactionStatusBadge; 
+
+    // Run the initialization function when the page loads
+    document.addEventListener('DOMContentLoaded', initializeDashboard);
+    </script>
+</body>
+</html>
