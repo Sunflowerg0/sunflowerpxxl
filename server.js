@@ -22,6 +22,7 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL; 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; 
+const PORT = process.env.PORT || 3000;
 
 // --- 1. EMAIL TRANSPORT SETUP ---
 // Configuration to connect to an SMTP service (e.g., Gmail using an App Password)
@@ -3509,21 +3510,23 @@ app.use((req, res) => {
 
 async function startServer() {
     try {
+        // 1. Database Connection
         await mongoose.connect(MONGODB_URI);
-        console.log('🔗 Database connection established successfully.');
+        console.log('🔗 Database connected.');
 
+        // 2. Data Population
         await populateInitialData();
 
-        // Use process.env.PORT for PXXL compatibility
-        const finalPort = process.env.PORT || PORT || 3000;
-
-        app.listen(finalPort, () => {
-            console.log(`🌐 Server is LIVE on port ${finalPort}`);
-            console.log(`📂 Root Directory: ${PROJECT_ROOT}`);
+        // 3. START LISTENING (Crucial change here)
+        // We use 0.0.0.0 to ensure it listens on all network interfaces
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`🚀 Sunflower Server is LIVE!`);
+            console.log(`🌐 URL: https://sunflowers.pxxl.click`);
+            console.log(`📡 Port: ${PORT}`);
         });
         
     } catch (error) {
-        console.error('❌ FATAL ERROR: Failed to start server:', error);
+        console.error('❌ FATAL STARTUP ERROR:', error);
         process.exit(1);
     }
 }
