@@ -3511,36 +3511,23 @@ app.use((req, res) => {
 console.log("🟡 DEBUG: Script execution started...");
 
 async function startServer() {
-    console.log("🟡 DEBUG: Entering startServer function...");
+    console.log("🟡 Pxxl Startup: Initializing...");
     try {
-        // 1. Database Connection
-        // Ensure MONGODB_URI is defined in your PXXL Environment Variables
-        if (!process.env.MONGODB_URI) {
-            console.error("❌ ERROR: MONGODB_URI is not defined in environment variables.");
-        }
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('🔗 Database connected successfully.');
 
-        await mongoose.connect(process.env.MONGODB_URI || MONGODB_URI);
-        console.log('🔗 Database connection established successfully.');
-
-        // 2. Run initial data setup
         await populateInitialData();
 
-        // 3. START THE SERVER 
-        // PXXL requires process.env.PORT to route traffic correctly
-        const FINAL_PORT = process.env.PORT || 3000;
-
-        app.listen(FINAL_PORT, '0.0.0.0', () => {
-            console.log(`✅ Sunflower Server is LIVE on port ${FINAL_PORT}`);
-            console.log(`📂 Project Root: ${PROJECT_ROOT}`);
+        // Bind to 0.0.0.0 and use the dynamic port provided by Pxxl
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`✅ Sunflower Server is LIVE on port ${PORT}`);
         });
         
     } catch (error) {
-        console.error('❌ FATAL ERROR: Failed to start server:', error);
-        // On PXXL, exiting will usually trigger a restart loop
+        console.error('❌ FATAL STARTUP ERROR:', error);
         process.exit(1); 
     }
 }
-
 // LOG 4: Final trigger
 console.log("🟡 DEBUG: Calling startServer()...");
 startServer();
