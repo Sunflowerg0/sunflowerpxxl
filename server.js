@@ -3463,6 +3463,10 @@ async function populateInitialData() {
     console.log('ℹ️ Initial data population function executed.'); 
     return true;
 }
+// Add this immediately after your 'const app = express();'
+app.get('/ping', (req, res) => {
+    res.send('Sunflower Server is Reachable!');
+});
 
 // ----------------------------------------------------------------------------------
 // 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED) - CORRECTED
