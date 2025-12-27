@@ -3502,22 +3502,18 @@ async function startServer() {
         await mongoose.connect(MONGODB_URI);
         console.log('🔗 Database connection established successfully.');
 
-        // Run the data population function immediately after connection
         await populateInitialData();
 
-        // Start listening only in a local environment, Vercel handles the listener
-        if (process.env.NODE_ENV !== 'production') {
-            app.listen(PORT, () => {
-                console.log(`🌐 Server running locally on http://localhost:${PORT}`);
-            });
-        }
+        // REMOVE THE IF STATEMENT - Just listen!
+        app.listen(PORT, () => {
+            console.log(`🌐 Server running on port ${PORT}`);
+        });
         
     } catch (error) {
-        console.error('❌ FATAL ERROR: Failed to connect to database or start server:', error);
+        console.error('❌ FATAL ERROR:', error);
         process.exit(1);
     }
 }
-
 // Execute the server start function
 startServer();
 
