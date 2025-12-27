@@ -3503,32 +3503,40 @@ app.use((req, res) => {
     console.log(`⚠️ 404 hit for URL: ${req.url}`);
     res.status(404).send("404: The requested resource was not found on Sunflower Server.");
 });
-
-// ----------------------------------------------------------------------------------
-// 🚀 START SERVER LOGIC
-// ----------------------------------------------------------------------------------
+// LOG 0: Check if script starts at all
+console.log("🟡 DEBUG: Script execution started...");
 
 async function startServer() {
+    console.log("🟡 DEBUG: Entering startServer function...");
     try {
         // 1. Database Connection
-        await mongoose.connect(MONGODB_URI);
-        console.log('🔗 Database connected.');
+        // Ensure MONGODB_URI is defined in your PXXL Environment Variables
+        if (!process.env.MONGODB_URI) {
+            console.error("❌ ERROR: MONGODB_URI is not defined in environment variables.");
+        }
 
-        // 2. Data Population
+        await mongoose.connect(process.env.MONGODB_URI || MONGODB_URI);
+        console.log('🔗 Database connection established successfully.');
+
+        // 2. Run initial data setup
         await populateInitialData();
 
-        // 3. START LISTENING (Crucial change here)
-        // We use 0.0.0.0 to ensure it listens on all network interfaces
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Sunflower Server is LIVE!`);
-            console.log(`🌐 URL: https://sunflowers.pxxl.click`);
-            console.log(`📡 Port: ${PORT}`);
+        // 3. START THE SERVER 
+        // PXXL requires process.env.PORT to route traffic correctly
+        const FINAL_PORT = process.env.PORT || 3000;
+
+        app.listen(FINAL_PORT, '0.0.0.0', () => {
+            console.log(`✅ Sunflower Server is LIVE on port ${FINAL_PORT}`);
+            console.log(`📂 Project Root: ${PROJECT_ROOT}`);
         });
         
     } catch (error) {
-        console.error('❌ FATAL STARTUP ERROR:', error);
-        process.exit(1);
+        console.error('❌ FATAL ERROR: Failed to start server:', error);
+        // On PXXL, exiting will usually trigger a restart loop
+        process.exit(1); 
     }
 }
 
+// LOG 4: Final trigger
+console.log("🟡 DEBUG: Calling startServer()...");
 startServer();
