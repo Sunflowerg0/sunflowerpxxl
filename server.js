@@ -1461,12 +1461,6 @@ async function logStatusChange(txId, oldStatus, newStatus, adminId) {
     return true;
 }
 
-// -----------------------------------------------------------------------
-// THE DUPLICATE/MOCK sendStatusUpdateEmail FUNCTION WAS DELETED HERE.
-// THE LIVE FUNCTION AT THE TOP IS NOW CORRECTLY ACCESSIBLE.
-// -----------------------------------------------------------------------
-
-
 // =======================================================================
 // ⭐ TRANSACTION STATUS UPDATE ROUTE (The original code) ⭐
 // =======================================================================
@@ -3470,30 +3464,32 @@ async function populateInitialData() {
 }
 
 // ----------------------------------------------------------------------------------
-// 🚀 EXPRESS ROUTING AND MIDDLEWARE DEFINITIONS (STAYS THE SAME)
+// 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED)
 // ----------------------------------------------------------------------------------
 
-// Make the 'uploads' folder publicly accessible
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Ensure __dirname is correctly interpreted
+const publicPath = path.resolve(__dirname);
 
-// Serve static files from specific, known client-side directories.
-// This prevents exposing sensitive files outside these folders.
+// 1. Serve static files from folders first
+app.use('/uploads', express.static(path.join(publicPath, 'uploads')));
+app.use('/client', express.static(path.join(publicPath, 'client')));
+app.use('/admin', express.static(path.join(publicPath, 'admin')));
 
-// 1. Serve 'client' assets (e.g., /client/styles.css)
-app.use('/client', express.static(path.join(__dirname, 'client')));
-
-// 2. Serve 'admin' assets (e.g., /admin/dashboard.js)
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
-
-// 3. Handle the main index.html file at the root URL
+// 2. Explicitly serve index.html at the root
 app.get('/', (req, res) => {
-    // Load the confirmed public file (index.html) at the root URL
-    res.sendFile(path.join(__dirname, 'index.html')); 
+    const indexPath = path.join(publicPath, 'index.html');
+    console.log(`Trying to serve index from: ${indexPath}`);
+    res.sendFile(indexPath, (err) => {
+        if (err) {
+            console.error("Error sending index.html:", err);
+            res.status(404).send("Index file not found on server.");
+        }
+    });
 });
 
-// ----------------------------------------------------------------------------------
-// 🚀 PRODUCTION SERVER STARTUP (REMOVING VERCEL LOGIC)
-// ----------------------------------------------------------------------------------
+// 3. Optional: Global static fallback (Catch-all for root level files like favicon)
+app.use(express.static(publicPath));
+
 
 async function startServer() {
     try {
