@@ -3507,27 +3507,37 @@ app.use((req, res) => {
     console.log(`⚠️ 404 hit for URL: ${req.url}`);
     res.status(404).send("404: The requested resource was not found on Sunflower Server.");
 });
-// LOG 0: Check if script starts at all
-console.log("🟡 DEBUG: Script execution started...");
+// At the very top of server.js, add this to prove the file is running
+console.log("🚀 BOOTING: server.js has started executing...");
 
 async function startServer() {
-    console.log("🟡 Pxxl Startup: Initializing...");
+    console.log("🔍 STARTING: Attempting to initialize server...");
     try {
+        // Use process.env.PORT which Pxxl provides (usually 3000 as per your settings)
+        const FINAL_PORT = process.env.PORT || 3000;
+
+        // Ensure database connection doesn't hang forever
+        if (!process.env.MONGODB_URI) {
+            console.error("❌ CRITICAL: MONGODB_URI is missing from environment variables!");
+        }
+
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('🔗 Database connected successfully.');
+        console.log('🔗 DATABASE: Connection established successfully.');
 
         await populateInitialData();
 
-        // Bind to 0.0.0.0 and use the dynamic port provided by Pxxl
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`✅ Sunflower Server is LIVE on port ${PORT}`);
+        // Listen on 0.0.0.0 is mandatory for cloud hosting
+        app.listen(FINAL_PORT, '0.0.0.0', () => {
+            console.log(`✅ SUCCESS: Sunflower Server is LIVE on port ${FINAL_PORT}`);
         });
         
     } catch (error) {
-        console.error('❌ FATAL STARTUP ERROR:', error);
-        process.exit(1); 
+        console.error('❌ FATAL ERROR: Process crashed during startup:', error);
+        // Important: Give the logs a second to send before exiting
+        setTimeout(() => process.exit(1), 1000);
     }
 }
+
 // LOG 4: Final trigger
 console.log("🟡 DEBUG: Calling startServer()...");
 startServer();

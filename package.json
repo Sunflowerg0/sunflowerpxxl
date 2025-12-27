@@ -1,12 +1,12 @@
 {
-  "name": "Sunflower project",
+  "name": "Sunflower-project",
   "version": "1.0.0",
   "description": "Admin Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "echo 'Build successful: Static assets and serverless function will be detected by Vercel'"
+    "build": "npm install" 
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -20,7 +20,7 @@
     "nodemailer": "^7.0.11",
     "path": "^0.12.7"
   },
-   "devDependencies": {
+  "devDependencies": {
     "nodemon": "^3.1.4"
   }
 }
