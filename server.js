@@ -3467,24 +3467,36 @@ async function populateInitialData() {
 // 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED)
 // ----------------------------------------------------------------------------------
 
-// Ensure __dirname is correctly interpreted
-const publicPath = path.resolve(__dirname);
+// 1. Define the absolute root path of your project
+const PROJECT_ROOT = path.resolve(__dirname);
 
-// 1. Serve static files from folders first
-app.use('/uploads', express.static(path.join(publicPath, 'uploads')));
-app.use('/client', express.static(path.join(publicPath, 'client')));
-app.use('/admin', express.static(path.join(publicPath, 'admin')));
+// 2. Serve static folders with absolute paths
+app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
+app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
+app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
 
-// 2. Explicitly serve index.html at the root
+// 3. Optimized Root Route with Debugging
 app.get('/', (req, res) => {
-    const indexPath = path.join(publicPath, 'index.html');
-    console.log(`Trying to serve index from: ${indexPath}`);
+    const indexPath = path.join(PROJECT_ROOT, 'index.html');
+    
+    // This will show up in your PXXL terminal/logs
+    console.log(`🔍 SERVER LOG: Attempting to serve index from: ${indexPath}`);
+
     res.sendFile(indexPath, (err) => {
         if (err) {
-            console.error("Error sending index.html:", err);
-            res.status(404).send("Index file not found on server.");
+            console.error("❌ ERROR: index.html not found at path:", indexPath);
+            res.status(404).json({
+                success: false,
+                message: "Frontend entry point (index.html) not found on the server.",
+                searchedPath: indexPath
+            });
         }
     });
+});
+
+// 4. Catch-all: If someone goes to a route that doesn't exist
+app.use((req, res) => {
+    res.status(404).send("404: The requested resource was not found on Sunflower Server.");
 });
 
 // 3. Optional: Global static fallback (Catch-all for root level files like favicon)
