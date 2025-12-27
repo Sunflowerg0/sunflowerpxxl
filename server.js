@@ -3464,59 +3464,62 @@ async function populateInitialData() {
 }
 
 // ----------------------------------------------------------------------------------
-// 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED)
+// 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED) - CORRECTED
 // ----------------------------------------------------------------------------------
 
-// 1. Define the absolute root path of your project
+// 1. Define the absolute root path accurately
 const PROJECT_ROOT = path.resolve(__dirname);
 
-// 2. Serve static folders with absolute paths
+// 2. Serve static folders first (High Priority)
 app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
 app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
 app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
 
-// 3. Optimized Root Route with Debugging
+// 3. Handle the main index.html file at the root URL
 app.get('/', (req, res) => {
     const indexPath = path.join(PROJECT_ROOT, 'index.html');
     
-    // This will show up in your PXXL terminal/logs
-    console.log(`🔍 SERVER LOG: Attempting to serve index from: ${indexPath}`);
+    // Debugging log for PXXL console
+    console.log(`🔍 Attempting to serve: ${indexPath}`);
 
     res.sendFile(indexPath, (err) => {
         if (err) {
-            console.error("❌ ERROR: index.html not found at path:", indexPath);
+            console.error("❌ ERROR: index.html not found at:", indexPath);
             res.status(404).json({
                 success: false,
-                message: "Frontend entry point (index.html) not found on the server.",
-                searchedPath: indexPath
+                message: "Frontend entry point not found.",
+                pathTried: indexPath
             });
         }
     });
 });
 
-// 4. Catch-all: If someone goes to a route that doesn't exist
+// 4. Global static fallback (For root-level files like favicon.ico or manifest.json)
+app.use(express.static(PROJECT_ROOT));
+
+// 5. FINAL CATCH-ALL (Must be at the very bottom of all routes)
 app.use((req, res) => {
+    console.log(`⚠️ 404 hit for URL: ${req.url}`);
     res.status(404).send("404: The requested resource was not found on Sunflower Server.");
 });
 
-// 3. Optional: Global static fallback (Catch-all for root level files like favicon)
-app.use(express.static(publicPath));
-
+// ----------------------------------------------------------------------------------
+// 🚀 START SERVER LOGIC
+// ----------------------------------------------------------------------------------
 
 async function startServer() {
     try {
-        // 1. Connect to MongoDB
         await mongoose.connect(MONGODB_URI);
         console.log('🔗 Database connection established successfully.');
 
-        // 2. Run initial data setup
         await populateInitialData();
 
-        // 3. START THE SERVER 
-        // We remove the NODE_ENV check so it starts on PXXL regardless of environment
-        app.listen(PORT, () => {
-            console.log(`🌐 Server is LIVE on port ${PORT}`);
-            console.log(`📂 Serving index from: ${path.join(__dirname, 'index.html')}`);
+        // Use process.env.PORT for PXXL compatibility
+        const finalPort = process.env.PORT || PORT || 3000;
+
+        app.listen(finalPort, () => {
+            console.log(`🌐 Server is LIVE on port ${finalPort}`);
+            console.log(`📂 Root Directory: ${PROJECT_ROOT}`);
         });
         
     } catch (error) {
@@ -3525,14 +3528,4 @@ async function startServer() {
     }
 }
 
-// Execute the server start function
 startServer();
-
-
-// ----------------------------------------------------------------------------------
-// --- VERCEL EXPORT (MINIMAL) ---
-// ----------------------------------------------------------------------------------
-
-// Only export the app itself for Vercel to correctly identify and wrap it 
-// as a Serverless Function. This is often optional but good practice.
-//module.exports = app;
