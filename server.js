@@ -3507,33 +3507,30 @@ app.use((req, res) => {
     console.log(`⚠️ 404 hit for URL: ${req.url}`);
     res.status(404).send("404: The requested resource was not found on Sunflower Server.");
 });
-// At the very top of server.js, add this to prove the file is running
-console.log("🚀 BOOTING: server.js has started executing...");
+
+// Add this at the VERY top of server.js
+console.log("--- SYSTEM BOOT SEQUENCE STARTING ---");
+
 
 async function startServer() {
-    console.log("🟡 PXXL DEBUG: Attempting to start server...");
+    console.log("🟡 Step 1: Checking environment...");
+    if (!process.env.MONGODB_URI) {
+        console.error("❌ ERROR: MONGODB_URI is undefined!");
+    }
+
     try {
-        // 2. Connect to MongoDB (Ensure MONGODB_URI is in your Pxxl Environment tab)
+        console.log("🟡 Step 2: Connecting to DB...");
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log('🔗 DB CONNECTED: Database link established.');
-
-        await populateInitialData();
-
-        // 3. LISTEN on 0.0.0.0 (Crucial for Cloud Hosting)
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`✅ SUCCESS: Sunflower Server is LIVE on port ${PORT}`);
-            console.log(`🌐 URL: https://sunflowers.pxxl.click`);
-        });
         
-    } catch (error) {
-        console.error('❌ FATAL ERROR: Server failed to boot:', error);
-        // Delay exit so you can actually read the error in the dashboard logs
-        setTimeout(() => process.exit(1), 2000);
+        console.log("🟡 Step 3: Launching Express...");
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`✅ SUCCESS: Server listening on port ${PORT}`);
+        });
+    } catch (err) {
+        console.error("❌ FATAL BOOT ERROR:", err.message);
+        // Don't let it crash silently, force the error into the log
+        process.exit(1);
     }
 }
 
-startServer();
-
-// LOG 4: Final trigger
-console.log("🟡 DEBUG: Calling startServer()...");
 startServer();
