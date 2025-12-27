@@ -3492,30 +3492,34 @@ app.get('/', (req, res) => {
 });
 
 // ----------------------------------------------------------------------------------
-// --- VERCEL COMPATIBLE SERVER STARTUP LOGIC (CRITICAL CHANGE) ---
+// 🚀 PRODUCTION SERVER STARTUP (REMOVING VERCEL LOGIC)
 // ----------------------------------------------------------------------------------
 
-// This block is what Vercel expects for a standard Node.js server entry file.
-// It initiates the database connection and starts the Express server.
 async function startServer() {
     try {
+        // 1. Connect to MongoDB
         await mongoose.connect(MONGODB_URI);
         console.log('🔗 Database connection established successfully.');
 
+        // 2. Run initial data setup
         await populateInitialData();
 
-        // REMOVE THE IF STATEMENT - Just listen!
+        // 3. START THE SERVER 
+        // We remove the NODE_ENV check so it starts on PXXL regardless of environment
         app.listen(PORT, () => {
-            console.log(`🌐 Server running on port ${PORT}`);
+            console.log(`🌐 Server is LIVE on port ${PORT}`);
+            console.log(`📂 Serving index from: ${path.join(__dirname, 'index.html')}`);
         });
         
     } catch (error) {
-        console.error('❌ FATAL ERROR:', error);
+        console.error('❌ FATAL ERROR: Failed to start server:', error);
         process.exit(1);
     }
 }
+
 // Execute the server start function
 startServer();
+
 
 // ----------------------------------------------------------------------------------
 // --- VERCEL EXPORT (MINIMAL) ---
@@ -3523,4 +3527,4 @@ startServer();
 
 // Only export the app itself for Vercel to correctly identify and wrap it 
 // as a Serverless Function. This is often optional but good practice.
-module.exports = app;
+//module.exports = app;
