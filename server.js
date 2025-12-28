@@ -3461,66 +3461,69 @@ async function populateInitialData() {
 app.get('/ping', (req, res) => {
     res.send('Sunflower Server is Reachable!');
 });
-// ----------------------------------------------------------------------------------
-// 🚀 UPDATED EXPRESS ROUTING (PXXL & CLOUD OPTIMIZED)
-// ----------------------------------------------------------------------------------
-const ROOT_DIR = process.cwd(); // Uses the current working directory (more reliable for PXXL)
 
-// 1. Serve static folders (Higher priority)
-app.use('/uploads', express.static(path.join(ROOT_DIR, 'uploads')));
-app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
-app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
+// ----------------------------------------------------------------------------------
+// 🚀 FINAL PXXL DEPLOYMENT ROUTING (DYNAMIC PATH RESOLUTION)
+// ----------------------------------------------------------------------------------
 
-// 2. Main Entry Point
+// Force the root directory to the current working directory where the process is running
+const PROJECT_ROOT = process.cwd();
+
+// 1. Serve static folders with absolute paths
+app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
+app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
+app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
+
+// 2. Main Entry Point (index.html)
 app.get('/', (req, res) => {
-    const indexPath = path.join(ROOT_DIR, 'index.html');
-    
-    // DEBUG LOG: This will show up in your PXXL console
-    console.log(`🔍 Checking for index.html at: ${indexPath}`);
+    const indexPath = path.join(PROJECT_ROOT, 'index.html');
     
     res.sendFile(indexPath, (err) => {
         if (err) {
-            console.error("❌ ERROR: index.html not found! Listing files in root:");
+            console.error(`❌ DEPLOYMENT ERROR: index.html not found at: ${indexPath}`);
+            
+            // Debugging tool: List all files the server can see in the log
             try {
-                const files = fs.readdirSync(ROOT_DIR);
-                console.log("Files found in root:", files);
-            } catch (e) {
-                console.error("Could not read directory.");
-            }
-            res.status(404).send("Sunflower Server is running, but index.html is missing from the root folder.");
+                const files = fs.readdirSync(PROJECT_ROOT);
+                console.log("Server Root Files:", files);
+            } catch (e) { console.log("Directory read failed"); }
+
+            res.status(404).send("Sunflower Server is Online, but the frontend (index.html) is missing from the server root.");
         }
     });
 });
 
-// 3. Fallback for SPA (Single Page Application) routing
+// 3. Global Static Fallback (For root-level assets)
+app.use(express.static(PROJECT_ROOT));
+
+// 4. SPA Catch-all (Redirects all other routes to index.html for frontend routing)
 app.get('*', (req, res) => {
-    // If it's an API call, don't send index.html
+    // Prevent API routes from accidentally returning the HTML file
     if (req.url.startsWith('/api/')) {
         return res.status(404).json({ success: false, message: "API Endpoint Not Found" });
     }
-    res.sendFile(path.join(ROOT_DIR, 'index.html'), (err) => {
-        if (err) res.status(404).send("Resource not found.");
+    res.sendFile(path.join(PROJECT_ROOT, 'index.html'), (err) => {
+        if (err) res.status(404).send("404: Resource Not Found");
     });
 });
 
-// --- UPDATED BOOT SEQUENCE ---
+// ----------------------------------------------------------------------------------
+// 🚀 SERVER BOOT
+// ----------------------------------------------------------------------------------
 async function startServer() {
-    console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOT SEQUENCE ---");
-    
+    console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
     try {
-        // Ensure Database is connected
-        if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing from Env Variables!");
+        if (!process.env.MONGODB_URI) throw new Error("Environment Variable MONGODB_URI is missing!");
         
         await mongoose.connect(process.env.MONGODB_URI);
-        console.log("✅ Database Connected.");
+        console.log("✅ MongoDB Connected Successfully.");
 
-        // IMPORTANT: Listen on 0.0.0.0 for Cloud Hosting
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 Server LIVE on port ${PORT}`);
-            console.log(`🔗 Local Testing: http://localhost:${PORT}`);
+            console.log(`🚀 SUCCESS: Server listening on port ${PORT}`);
+            console.log(`📍 Project Root: ${PROJECT_ROOT}`);
         });
     } catch (err) {
-        console.error("❌ FATAL ERROR DURING STARTUP:", err.message);
+        console.error("❌ FATAL STARTUP ERROR:", err.message);
         process.exit(1);
     }
 }
