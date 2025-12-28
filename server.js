@@ -22,6 +22,7 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL; 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; 
+const PORT = process.env.PORT || 3000;
 
 // --- 1. EMAIL TRANSPORT SETUP ---
 // Configuration to connect to an SMTP service (e.g., Gmail using an App Password)
@@ -3468,54 +3469,34 @@ app.get('/ping', (req, res) => {
     res.status(200).send('Sunflower Server is Reachable!');
 });
 
-// ----------------------------------------------------------------------------------
-// 🚀 2. UPDATED ROUTING LOGIC
-// ----------------------------------------------------------------------------------
-const ROOT_DIR = process.cwd(); 
+// 3. Serve Static Assets
+// This maps your directories so the browser can access CSS, JS, and Images
+app.use(express.static(path.join(__dirname, 'client'))); 
+app.use('/admin', express.static(path.join(__dirname, 'admin')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Serve static assets
-app.use('/uploads', express.static(path.join(ROOT_DIR, 'uploads')));
-app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
-app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
-
-// Main Entry Point
+// 4. Main Entry Point (Route)
 app.get('/', (req, res) => {
-    const indexPath = path.resolve(ROOT_DIR, 'index.html');
-    res.sendFile(indexPath, (err) => {
-        if (err) {
-            console.error(`❌ File Error: ${err.message}`);
-            res.status(404).send("Server is online, but index.html is missing.");
-        }
-    });
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------------------------------------
 // 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
+// 5. Async Start Server Function
 async function startServer() {
-    console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
-    
     try {
-        // Ensure you have these variables in your PXXL 'Environment' tab
-        if (!process.env.MONGODB_URI) {
-            console.warn("⚠️ MONGODB_URI missing. Server will start, but DB features will fail.");
-        }
-
-        // Connect to DB (Optional: wrap in try/catch to prevent server crash if DB is down)
-        if (process.env.MONGODB_URI) {
-            await mongoose.connect(process.env.MONGODB_URI);
-            console.log("✅ DB Connected.");
-        }
-
-        // IMPORTANT: PXXL requires listening on 0.0.0.0
-        const PORT = process.env.PORT || 8000;
-        app.listen(PORT, '0.0.0.0', () => {
-            console.log(`✅ SUCCESS: Listening on port ${PORT}`);
-            console.log(`📍 Root Path: ${ROOT_DIR}`);
+        // You can await database connections here (e.g., Mongoose or Sequelize)
+        // await connectDB(); 
+        
+        app.listen(PORT, () => {
+            console.log(`--- Sunflower PXXL Server ---`);
+            console.log(`🚀 Running on http://localhost:${PORT}`);
+            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
         });
-    } catch (err) {
-        console.error("❌ FATAL ERROR DURING STARTUP:", err.message);
-        // On PXXL, don't exit(1) immediately so we can see the error in the logs
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
     }
 }
 
