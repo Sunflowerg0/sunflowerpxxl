@@ -3476,17 +3476,16 @@ app.get('/debug-path', (req, res) => {
     });
 });
 
-// 3. Serve Static Assets
-// This maps your directories so the browser can access CSS, JS, and Images
+// 1. Move the Main Entry Point ABOVE the static assets
+app.get('/', (req, res) => {
+    // path.resolve is the most reliable way to handle absolute paths on cloud servers
+    res.sendFile(path.resolve(__dirname, 'index.html'));
+});
+
+// 2. Serve Static Assets (Only after checking the root)
 app.use(express.static(path.join(__dirname, 'client'))); 
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// 4. Main Entry Point (Route)
-// To this (more robust for cloud environments):
-app.get('/', (req, res) => {
-    res.sendFile(path.resolve(__dirname, 'index.html'));
-});
 
 async function startServer() {
     try {
