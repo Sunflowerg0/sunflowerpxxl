@@ -3457,74 +3457,67 @@ async function populateInitialData() {
     console.log('ℹ️ Initial data population function executed.'); 
     return true;
 }
-// Add this immediately after your 'const app = express();'
+
+// ----------------------------------------------------------------------------------
+// 🚀 DIAGNOSTICS & ROUTING
+// ----------------------------------------------------------------------------------
+
+// 1. Immediate Connectivity Test
 app.get('/ping', (req, res) => {
     res.send('Sunflower Server is Reachable!');
 });
 
-// ----------------------------------------------------------------------------------
-// 🚀 FINAL PXXL DEPLOYMENT ROUTING (DYNAMIC PATH RESOLUTION)
-// ----------------------------------------------------------------------------------
-
-// Force the root directory to the current working directory where the process is running
+// 2. Dynamic Path Resolution
 const PROJECT_ROOT = process.cwd();
 
-// 1. Serve static folders with absolute paths
+// 3. Serve Static Assets
 app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
 app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
 app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
 
-// 2. Main Entry Point (index.html)
+// 4. Main Frontend Entry Point
 app.get('/', (req, res) => {
-    const indexPath = path.join(PROJECT_ROOT, 'index.html');
+    const indexPath = path.resolve(PROJECT_ROOT, 'index.html');
     
     res.sendFile(indexPath, (err) => {
         if (err) {
-            console.error(`❌ DEPLOYMENT ERROR: index.html not found at: ${indexPath}`);
-            
-            // Debugging tool: List all files the server can see in the log
+            console.error(`❌ File Error: index.html not found at ${indexPath}`);
+            // Log exactly what the server sees to the PXXL console
             try {
                 const files = fs.readdirSync(PROJECT_ROOT);
-                console.log("Server Root Files:", files);
-            } catch (e) { console.log("Directory read failed"); }
-
-            res.status(404).send("Sunflower Server is Online, but the frontend (index.html) is missing from the server root.");
+                console.log("Files present in root:", files);
+            } catch (e) { console.log("Could not read root directory."); }
+            
+            res.status(404).send("Server is online, but index.html is missing from the root.");
         }
     });
 });
 
-// 3. Global Static Fallback (For root-level assets)
-app.use(express.static(PROJECT_ROOT));
-
-// 4. SPA Catch-all (Redirects all other routes to index.html for frontend routing)
+// 5. Global Fallback for SPA
 app.get('*', (req, res) => {
-    // Prevent API routes from accidentally returning the HTML file
-    if (req.url.startsWith('/api/')) {
-        return res.status(404).json({ success: false, message: "API Endpoint Not Found" });
-    }
+    if (req.url.startsWith('/api/')) return res.status(404).json({ success: false });
     res.sendFile(path.join(PROJECT_ROOT, 'index.html'), (err) => {
-        if (err) res.status(404).send("404: Resource Not Found");
+        if (err) res.status(404).send("404: Not Found");
     });
 });
 
 // ----------------------------------------------------------------------------------
-// 🚀 SERVER BOOT
+// 🚀 BOOT SEQUENCE
 // ----------------------------------------------------------------------------------
 async function startServer() {
-    console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
+    console.log("--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
     try {
-        if (!process.env.MONGODB_URI) throw new Error("Environment Variable MONGODB_URI is missing!");
-        
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("✅ MongoDB Connected Successfully.");
+        if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing!");
 
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log("✅ DB Connected.");
+
+        const PORT = process.env.PORT || 3000;
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`🚀 SUCCESS: Server listening on port ${PORT}`);
-            console.log(`📍 Project Root: ${PROJECT_ROOT}`);
+            console.log(`✅ Server listening on port ${PORT}`);
         });
     } catch (err) {
-        console.error("❌ FATAL STARTUP ERROR:", err.message);
-        process.exit(1);
+        console.error("❌ Startup Failure:", err.message);
     }
 }
 
