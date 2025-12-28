@@ -3478,7 +3478,16 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 4. Main Entry Point (Route)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    const filePath = path.resolve(__dirname, 'index.html');
+    console.log("📂 Root requested. Looking for file at:", filePath);
+    
+    // Check if the file actually exists before sending
+    if (fs.existsSync(filePath)) {
+        res.sendFile(filePath);
+    } else {
+        console.error("❌ File not found on disk!");
+        res.status(404).send("Internal Path Error: index.html not found");
+    }
 });
 
 // ----------------------------------------------------------------------------------
