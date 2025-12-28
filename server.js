@@ -3477,26 +3477,27 @@ app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 4. Main Entry Point (Route)
+// To this (more robust for cloud environments):
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.resolve(__dirname, 'index.html'));
 });
 
-// ----------------------------------------------------------------------------------
-// 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
-// ----------------------------------------------------------------------------------
-// 5. Async Start Server Function
 async function startServer() {
     try {
-        // You can await database connections here (e.g., Mongoose or Sequelize)
-        // await connectDB(); 
+        console.log("⏳ Attempting to connect to MongoDB...");
         
+        // Use the URI from your .env
+        await mongoose.connect(process.env.MONGODB_URI);
+        
+        console.log("✅ MongoDB Connected Successfully!");
+
         app.listen(PORT, () => {
             console.log(`--- Sunflower PXXL Server ---`);
-            console.log(`🚀 Running on http://localhost:${PORT}`);
-            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
+            console.log(`🚀 Running on port: ${PORT}`);
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
+        console.error('❌ FATAL ERROR: Database connection failed.');
+        console.error(error.message);
         process.exit(1);
     }
 }
