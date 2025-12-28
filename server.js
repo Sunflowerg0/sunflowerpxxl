@@ -3461,60 +3461,82 @@ async function populateInitialData() {
 app.get('/ping', (req, res) => {
     res.send('Sunflower Server is Reachable!');
 });
-
 // ----------------------------------------------------------------------------------
-// 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED) - CORRECTED
+// 🚀 UPDATED EXPRESS ROUTING (PXXL & CLOUD OPTIMIZED)
 // ----------------------------------------------------------------------------------
-// Use process.cwd() as a backup to __dirname for cloud environments
-const ROOT = path.join(__dirname);
 
-// 1. Serve static files from the root and specific folders
-app.use(express.static(ROOT)); 
-app.use('/uploads', express.static(path.join(ROOT, 'uploads')));
-app.use('/client', express.static(path.join(ROOT, 'client')));
-app.use('/admin', express.static(path.join(ROOT, 'admin')));
+// Use process.cwd() for the current working directory to ensure it finds index.html
+const ROOT_DIR = path.resolve(); 
 
-// 2. Optimized Root Route
+// 1. Static Middleware (Ordered for Priority)
+app.use('/uploads', express.static(path.join(ROOT_DIR, 'uploads')));
+app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
+app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
+
+// 2. Main Entry Point (Root Route)
 app.get('/', (req, res) => {
-    res.sendFile(path.join(ROOT, 'index.html'), (err) => {
+    const indexPath = path.join(ROOT_DIR, 'index.html');
+    
+    res.sendFile(indexPath, (err) => {
         if (err) {
-            // This will tell you exactly where the server is looking in the PXXL logs
-            console.error("DEBUG: Looking for index.html at:", path.join(ROOT, 'index.html'));
-            res.status(404).send("Frontend files missing on server.");
+            console.error(`❌ DEPLOYMENT ERROR: index.html missing at ${indexPath}`);
+            // Provide a helpful message for debugging in the browser
+            res.status(404).send(`
+                <h1>Sunflower Server is Online</h1>
+                <p>Status: Backend Active ✅</p>
+                <p>Error: Frontend files (index.html) not found in root directory.</p>
+                <small>Path checked: ${indexPath}</small>
+            `);
         }
     });
 });
 
-// 4. Global static fallback (For root-level files like favicon.ico or manifest.json)
-app.use(express.static(ROOT));
+// 3. Global Static Fallback (Serves assets in the root folder like icons/css)
+app.use(express.static(ROOT_DIR));
 
-// 5. FINAL CATCH-ALL (Must be at the very bottom of all routes)
-app.use((req, res) => {
-    console.log(`⚠️ 404 hit for URL: ${req.url}`);
-    res.status(404).send("404: The requested resource was not found on Sunflower Server.");
+// 4. API 404 Handler (Avoids returning HTML for failed API calls)
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ success: false, message: "API endpoint not found." });
 });
 
-// Add this at the VERY top of server.js
-console.log("--- SYSTEM BOOT SEQUENCE STARTING ---");
+// 5. Final Catch-All for Frontend Routing
+app.get('*', (req, res) => {
+    res.sendFile(path.join(ROOT_DIR, 'index.html'));
+});
 
+// ----------------------------------------------------------------------------------
+// 🚀 SERVER BOOT SEQUENCE
+// ----------------------------------------------------------------------------------
+console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOT SEQUENCE STARTING ---");
 
 async function startServer() {
-    console.log("🟡 Step 1: Checking environment...");
-    if (!process.env.MONGODB_URI) {
-        console.error("❌ ERROR: MONGODB_URI is undefined!");
+    console.log("🟡 Step 1: Validating Environment Variables...");
+    const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'EMAIL_USER', 'EMAIL_PASS'];
+    const missing = requiredEnv.filter(key => !process.env[key]);
+
+    if (missing.length > 0) {
+        console.error(`❌ CRITICAL ERROR: Missing Environment Variables: ${missing.join(', ')}`);
+        // On PXXL, don't exit immediately so you can see the error in logs
     }
 
     try {
-        console.log("🟡 Step 2: Connecting to DB...");
+        console.log("🟡 Step 2: Connecting to MongoDB Atlas...");
+        mongoose.set('strictQuery', false);
         await mongoose.connect(process.env.MONGODB_URI);
-        
-        console.log("🟡 Step 3: Launching Express...");
+        console.log("✅ Database Connected Successfully.");
+
+        // Optional: Call your initial data population here
+        await populateInitialData();
+
+        console.log("🟡 Step 3: Launching Express Application...");
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`✅ SUCCESS: Server listening on port ${PORT}`);
+            console.log(`\n🚀 SUCCESS: Sunflower Server is LIVE`);
+            console.log(`📡 URL: https://sunflowers.pxxl.click`);
+            console.log(`📍 Port: ${PORT}`);
+            console.log(`----------------------------------------------\n`);
         });
     } catch (err) {
         console.error("❌ FATAL BOOT ERROR:", err.message);
-        // Don't let it crash silently, force the error into the log
         process.exit(1);
     }
 }
