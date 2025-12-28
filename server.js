@@ -3465,9 +3465,15 @@ async function populateInitialData() {
 // ----------------------------------------------------------------------------------
 // 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
 // ----------------------------------------------------------------------------------
-app.get('/ping', (req, res) => {
-    console.log("🔔 Ping request received!");
-    res.status(200).send('Sunflower Server is Reachable!');
+app.get('/debug-path', (req, res) => {
+    const fs = require('fs');
+    const fullPath = path.resolve(__dirname, 'index.html');
+    const exists = fs.existsSync(fullPath);
+    res.json({
+        searchingIn: __dirname,
+        expectedFile: fullPath,
+        fileExistsOnServer: exists
+    });
 });
 
 // 3. Serve Static Assets
