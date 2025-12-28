@@ -3459,45 +3459,51 @@ async function populateInitialData() {
 }
 
 // ----------------------------------------------------------------------------------
-// 🚀 DIAGNOSTICS & ROUTING
+// 🚀 SERVE STATIC ASSETS
 // ----------------------------------------------------------------------------------
-// ----------------------------------------------------------------------------------
-// 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
-// ----------------------------------------------------------------------------------
-app.get('/ping', (req, res) => {
-    console.log("🔔 Ping request received!");
-    res.status(200).send('Sunflower Server is Reachable!');
-});
-
-// 3. Serve Static Assets
-// This maps your directories so the browser can access CSS, JS, and Images
-app.use(express.static(path.join(__dirname, 'client'))); 
+// Important: Ensure the path to index.html is correct based on your 'dir' listing
+app.use(express.static(path.join(__dirname))); // Serves files in root (like index.html)
+app.use('/client', express.static(path.join(__dirname, 'client')));
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 4. Main Entry Point (Route)
+// ----------------------------------------------------------------------------------
+// 🚀 MAIN ENTRY POINT
+// ----------------------------------------------------------------------------------
 app.get('/', (req, res) => {
+    // Based on your 'dir' output, index.html is in the root folder
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------------------------------------
-// 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
+// 🚀 THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
-// 5. Async Start Server Function
 async function startServer() {
     try {
-        // You can await database connections here (e.g., Mongoose or Sequelize)
-        // await connectDB(); 
-        
+        console.log("⏳ Initializing Sunflower System...");
+
+        // 1. Connect to MongoDB FIRST
+        if (!MONGODB_URI) {
+            throw new Error("MONGODB_URI is missing from environment variables!");
+        }
+
+        await mongoose.connect(MONGODB_URI);
+        console.log('✅ MongoDB Connected Successfully');
+
+        // 2. Start Express ONLY after DB is ready
         app.listen(PORT, () => {
             console.log(`--- Sunflower PXXL Server ---`);
-            console.log(`🚀 Running on http://localhost:${PORT}`);
-            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
+            console.log(`🚀 Running on port: ${PORT}`);
+            console.log(`🔗 URL: https://sunflowers.pxxl.click`);
+            console.log(`📂 Static assets ready: /client, /admin, /uploads`);
         });
+
     } catch (error) {
-        console.error('Failed to start server:', error);
+        console.error('❌ CRITICAL STARTUP ERROR:', error.message);
+        // Exit with failure so the PXXL runner knows to restart
         process.exit(1);
     }
 }
 
+// Start the engine
 startServer();
