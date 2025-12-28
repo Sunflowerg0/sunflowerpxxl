@@ -610,10 +610,6 @@ async function generateAndSendOtp(user) {
     return true; // Indicates success
 }
 
-// -----------------------------
-// --- JWT AUTHENTICATION MIDDLEWARE ---
-// -----------------------------
-
 /**
  * Middleware to verify a JWT from the 'Authorization' header.
  * Attaches the decoded admin payload to req.admin if valid.
@@ -2560,8 +2556,6 @@ app.put('/api/transactions/:id/complete', verifyAdminToken, async (req, res) => 
     }
 });
 
-
-
 // POST endpoint for User/Client Login (MODIFIED FOR EMAIL LOGIN AND 2FA INITIATION)
 app.post('/api/users/login', async (req, res) => {
     // We now accept an identifier that can be either userIdName or the user's email
@@ -3471,36 +3465,28 @@ app.get('/ping', (req, res) => {
 // ----------------------------------------------------------------------------------
 // 🚀 UPDATED EXPRESS ROUTING (PXXL OPTIMIZED) - CORRECTED
 // ----------------------------------------------------------------------------------
+// Use process.cwd() as a backup to __dirname for cloud environments
+const ROOT = path.join(__dirname);
 
-// 1. Define the absolute root path accurately
-const PROJECT_ROOT = path.resolve(__dirname);
+// 1. Serve static files from the root and specific folders
+app.use(express.static(ROOT)); 
+app.use('/uploads', express.static(path.join(ROOT, 'uploads')));
+app.use('/client', express.static(path.join(ROOT, 'client')));
+app.use('/admin', express.static(path.join(ROOT, 'admin')));
 
-// 2. Serve static folders first (High Priority)
-app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
-app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
-app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
-
-// 3. Handle the main index.html file at the root URL
+// 2. Optimized Root Route
 app.get('/', (req, res) => {
-    const indexPath = path.join(PROJECT_ROOT, 'index.html');
-    
-    // Debugging log for PXXL console
-    console.log(`🔍 Attempting to serve: ${indexPath}`);
-
-    res.sendFile(indexPath, (err) => {
+    res.sendFile(path.join(ROOT, 'index.html'), (err) => {
         if (err) {
-            console.error("❌ ERROR: index.html not found at:", indexPath);
-            res.status(404).json({
-                success: false,
-                message: "Frontend entry point not found.",
-                pathTried: indexPath
-            });
+            // This will tell you exactly where the server is looking in the PXXL logs
+            console.error("DEBUG: Looking for index.html at:", path.join(ROOT, 'index.html'));
+            res.status(404).send("Frontend files missing on server.");
         }
     });
 });
 
 // 4. Global static fallback (For root-level files like favicon.ico or manifest.json)
-app.use(express.static(PROJECT_ROOT));
+app.use(express.static(ROOT));
 
 // 5. FINAL CATCH-ALL (Must be at the very bottom of all routes)
 app.use((req, res) => {
