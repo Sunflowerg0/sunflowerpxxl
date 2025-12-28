@@ -3476,10 +3476,16 @@ app.get('/debug-path', (req, res) => {
     });
 });
 
-// 1. Move the Main Entry Point ABOVE the static assets
+const root = path.resolve(__dirname);
+
 app.get('/', (req, res) => {
-    // path.resolve is the most reliable way to handle absolute paths on cloud servers
-    res.sendFile(path.resolve(__dirname, 'index.html'));
+    // Explicitly joining the absolute root with the filename
+    res.sendFile(path.join(root, 'index.html'), (err) => {
+        if (err) {
+            console.error("❌ Error sending index.html:", err);
+            res.status(404).send("File Not Found on Server");
+        }
+    });
 });
 
 // 2. Serve Static Assets (Only after checking the root)
