@@ -3461,63 +3461,62 @@ async function populateInitialData() {
 // ----------------------------------------------------------------------------------
 // 🚀 DIAGNOSTICS & ROUTING
 // ----------------------------------------------------------------------------------
-
-// 1. Immediate Connectivity Test
+// ----------------------------------------------------------------------------------
+// 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
+// ----------------------------------------------------------------------------------
 app.get('/ping', (req, res) => {
-    res.send('Sunflower Server is Reachable!');
+    console.log("🔔 Ping request received!");
+    res.status(200).send('Sunflower Server is Reachable!');
 });
 
-// 2. Dynamic Path Resolution
-const PROJECT_ROOT = process.cwd();
+// ----------------------------------------------------------------------------------
+// 🚀 2. UPDATED ROUTING LOGIC
+// ----------------------------------------------------------------------------------
+const ROOT_DIR = process.cwd(); 
 
-// 3. Serve Static Assets
-app.use('/uploads', express.static(path.join(PROJECT_ROOT, 'uploads')));
-app.use('/client', express.static(path.join(PROJECT_ROOT, 'client')));
-app.use('/admin', express.static(path.join(PROJECT_ROOT, 'admin')));
+// Serve static assets
+app.use('/uploads', express.static(path.join(ROOT_DIR, 'uploads')));
+app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
+app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
 
-// 4. Main Frontend Entry Point
+// Main Entry Point
 app.get('/', (req, res) => {
-    const indexPath = path.resolve(PROJECT_ROOT, 'index.html');
-    
+    const indexPath = path.resolve(ROOT_DIR, 'index.html');
     res.sendFile(indexPath, (err) => {
         if (err) {
-            console.error(`❌ File Error: index.html not found at ${indexPath}`);
-            // Log exactly what the server sees to the PXXL console
-            try {
-                const files = fs.readdirSync(PROJECT_ROOT);
-                console.log("Files present in root:", files);
-            } catch (e) { console.log("Could not read root directory."); }
-            
-            res.status(404).send("Server is online, but index.html is missing from the root.");
+            console.error(`❌ File Error: ${err.message}`);
+            res.status(404).send("Server is online, but index.html is missing.");
         }
     });
 });
 
-// 5. Global Fallback for SPA
-app.get('*', (req, res) => {
-    if (req.url.startsWith('/api/')) return res.status(404).json({ success: false });
-    res.sendFile(path.join(PROJECT_ROOT, 'index.html'), (err) => {
-        if (err) res.status(404).send("404: Not Found");
-    });
-});
-
 // ----------------------------------------------------------------------------------
-// 🚀 BOOT SEQUENCE
+// 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
 async function startServer() {
-    console.log("--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
+    console.log("\n--- 🌻 SUNFLOWER SYSTEM BOOTING ---");
+    
     try {
-        if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is missing!");
+        // Ensure you have these variables in your PXXL 'Environment' tab
+        if (!process.env.MONGODB_URI) {
+            console.warn("⚠️ MONGODB_URI missing. Server will start, but DB features will fail.");
+        }
 
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("✅ DB Connected.");
+        // Connect to DB (Optional: wrap in try/catch to prevent server crash if DB is down)
+        if (process.env.MONGODB_URI) {
+            await mongoose.connect(process.env.MONGODB_URI);
+            console.log("✅ DB Connected.");
+        }
 
+        // IMPORTANT: PXXL requires listening on 0.0.0.0
         const PORT = process.env.PORT || 3000;
         app.listen(PORT, '0.0.0.0', () => {
-            console.log(`✅ Server listening on port ${PORT}`);
+            console.log(`✅ SUCCESS: Listening on port ${PORT}`);
+            console.log(`📍 Root Path: ${ROOT_DIR}`);
         });
     } catch (err) {
-        console.error("❌ Startup Failure:", err.message);
+        console.error("❌ FATAL ERROR DURING STARTUP:", err.message);
+        // On PXXL, don't exit(1) immediately so we can see the error in the logs
     }
 }
 
