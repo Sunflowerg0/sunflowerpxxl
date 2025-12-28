@@ -3479,13 +3479,28 @@ app.get('/debug-path', (req, res) => {
 const root = path.resolve(__dirname);
 
 app.get('/', (req, res) => {
-    // Explicitly joining the absolute root with the filename
-    res.sendFile(path.join(root, 'index.html'), (err) => {
-        if (err) {
-            console.error("❌ Error sending index.html:", err);
-            res.status(404).send("File Not Found on Server");
+    // We try two common pathing methods for Cloud Hosting
+    const pathsToTry = [
+        path.join(process.cwd(), 'index.html'),
+        path.join(__dirname, 'index.html'),
+        path.resolve(__dirname, 'index.html')
+    ];
+
+    let fileSent = false;
+
+    for (const p of pathsToTry) {
+        if (fs.existsSync(p)) {
+            console.log("✅ Found index.html at:", p);
+            res.sendFile(p);
+            fileSent = true;
+            break;
         }
-    });
+    }
+
+    if (!fileSent) {
+        console.error("❌ index.html not found in any expected location.");
+        res.status(404).send("Server Error: HTML Source Missing");
+    }
 });
 
 // 2. Serve Static Assets (Only after checking the root)
