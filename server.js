@@ -1,4 +1,4 @@
-require('dotenv').config(); // Load variables from .env
+require('dotenv').config(); // MUST be the very first line
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors'); 
@@ -3478,44 +3478,27 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // 4. Main Entry Point (Route)
 app.get('/', (req, res) => {
-    const filePath = path.resolve(__dirname, 'index.html');
-    console.log("📂 Root requested. Looking for file at:", filePath);
-    
-    // Check if the file actually exists before sending
-    if (fs.existsSync(filePath)) {
-        res.sendFile(filePath);
-    } else {
-        console.error("❌ File not found on disk!");
-        res.status(404).send("Internal Path Error: index.html not found");
-    }
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------------------------------------
 // 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
+// 5. Async Start Server Function
 async function startServer() {
     try {
-        if (!MONGODB_URI) {
-            throw new Error("MONGODB_URI is missing from .env file");
-        }
-
-        console.log("⏳ Connecting to MongoDB Atlas...");
+        // You can await database connections here (e.g., Mongoose or Sequelize)
+        // await connectDB(); 
         
-        // Connect to MongoDB
-        await mongoose.connect(MONGODB_URI);
-        
-        console.log("✅ Database Connected Successfully");
-
         app.listen(PORT, () => {
             console.log(`--- Sunflower PXXL Server ---`);
             console.log(`🚀 Running on http://localhost:${PORT}`);
+            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
         });
     } catch (error) {
-        console.error('❌ CRITICAL ERROR:', error.message);
-        // If the DB fails, we don't want the server running in a "broken" state
-        process.exit(1); 
+        console.error('Failed to start server:', error);
+        process.exit(1);
     }
 }
 
-startServer();
 startServer();
