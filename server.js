@@ -22,7 +22,6 @@ const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL; 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD; 
-const PORT = process.env.PORT || 3000;
 
 // --- 1. EMAIL TRANSPORT SETUP ---
 // Configuration to connect to an SMTP service (e.g., Gmail using an App Password)
@@ -3509,7 +3508,7 @@ async function startServer() {
         }
 
         // IMPORTANT: PXXL requires listening on 0.0.0.0
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.PORT || 8080;
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ SUCCESS: Listening on port ${PORT}`);
             console.log(`📍 Root Path: ${ROOT_DIR}`);
