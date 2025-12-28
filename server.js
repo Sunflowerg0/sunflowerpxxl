@@ -3459,25 +3459,31 @@ async function populateInitialData() {
 }
 
 // ----------------------------------------------------------------------------------
-// 🚀 SERVE STATIC ASSETS
+// 🚀 DIAGNOSTICS & ROUTING
 // ----------------------------------------------------------------------------------
-// Important: Ensure the path to index.html is correct based on your 'dir' listing
-app.use(express.static(path.join(__dirname))); // Serves files in root (like index.html)
-app.use('/client', express.static(path.join(__dirname, 'client')));
+// ----------------------------------------------------------------------------------
+// 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
+// ----------------------------------------------------------------------------------
+app.get('/ping', (req, res) => {
+    console.log("🔔 Ping request received!");
+    res.status(200).send('Sunflower Server is Reachable!');
+});
+
+// 3. Serve Static Assets
+// This maps your directories so the browser can access CSS, JS, and Images
+app.use(express.static(path.join(__dirname, 'client'))); 
 app.use('/admin', express.static(path.join(__dirname, 'admin')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ----------------------------------------------------------------------------------
-// 🚀 MAIN ENTRY POINT
-// ----------------------------------------------------------------------------------
+// 4. Main Entry Point (Route)
 app.get('/', (req, res) => {
-    // Based on your 'dir' output, index.html is in the root folder
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // ----------------------------------------------------------------------------------
-// 🚀 THE BOOT SEQUENCE (Fixed for Cloud Hosting)
+// 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
+// 5. Async Start Server Function
 async function startServer() {
     try {
         console.log("⏳ Initializing Sunflower System...");
@@ -3504,6 +3510,4 @@ async function startServer() {
         process.exit(1);
     }
 }
-
-// Start the engine
 startServer();
