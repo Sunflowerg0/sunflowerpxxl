@@ -3486,28 +3486,18 @@ app.get('/', (req, res) => {
 // 5. Async Start Server Function
 async function startServer() {
     try {
-        console.log("⏳ Initializing Sunflower System...");
-
-        // 1. Connect to MongoDB FIRST
-        if (!MONGODB_URI) {
-            throw new Error("MONGODB_URI is missing from environment variables!");
-        }
-
-        await mongoose.connect(MONGODB_URI);
-        console.log('✅ MongoDB Connected Successfully');
-
-        // 2. Start Express ONLY after DB is ready
+        // You can await database connections here (e.g., Mongoose or Sequelize)
+        // await connectDB(); 
+        
         app.listen(PORT, () => {
             console.log(`--- Sunflower PXXL Server ---`);
-            console.log(`🚀 Running on port: ${PORT}`);
-            console.log(`🔗 URL: https://sunflowers.pxxl.click`);
-            console.log(`📂 Static assets ready: /client, /admin, /uploads`);
+            console.log(`🚀 Running on http://localhost:${PORT}`);
+            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
         });
-
     } catch (error) {
-        console.error('❌ CRITICAL STARTUP ERROR:', error.message);
-        // Exit with failure so the PXXL runner knows to restart
+        console.error('Failed to start server:', error);
         process.exit(1);
     }
 }
+
 startServer();
