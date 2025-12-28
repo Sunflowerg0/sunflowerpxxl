@@ -1,10 +1,11 @@
+require('dotenv').config(); // Load variables from .env
 const express = require('express');
 const multer = require('multer');
 const cors = require('cors'); 
 const path = require('path');
 const mongoose = require('mongoose');
 const fs = require('fs');
-const bcrypt = require('bcrypt'); 
+const bcrypt = require('bcryptjs');
 const SALT_ROUNDS = 10; 
 const jwt = require('jsonwebtoken'); 
 const crypto = require('crypto');   
@@ -3483,21 +3484,29 @@ app.get('/', (req, res) => {
 // ----------------------------------------------------------------------------------
 // 🚀 3. THE BOOT SEQUENCE (Fixed for Cloud Hosting)
 // ----------------------------------------------------------------------------------
-// 5. Async Start Server Function
 async function startServer() {
     try {
-        // You can await database connections here (e.g., Mongoose or Sequelize)
-        // await connectDB(); 
+        if (!MONGODB_URI) {
+            throw new Error("MONGODB_URI is missing from .env file");
+        }
+
+        console.log("⏳ Connecting to MongoDB Atlas...");
         
+        // Connect to MongoDB
+        await mongoose.connect(MONGODB_URI);
+        
+        console.log("✅ Database Connected Successfully");
+
         app.listen(PORT, () => {
             console.log(`--- Sunflower PXXL Server ---`);
             console.log(`🚀 Running on http://localhost:${PORT}`);
-            console.log(`📂 Static assets loaded: /client, /admin, /uploads`);
         });
     } catch (error) {
-        console.error('Failed to start server:', error);
-        process.exit(1);
+        console.error('❌ CRITICAL ERROR:', error.message);
+        // If the DB fails, we don't want the server running in a "broken" state
+        process.exit(1); 
     }
 }
 
+startServer();
 startServer();
