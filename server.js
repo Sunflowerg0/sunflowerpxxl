@@ -3508,7 +3508,7 @@ async function startServer() {
         }
 
         // IMPORTANT: PXXL requires listening on 0.0.0.0
-        const PORT = process.env.PORT || 8080;
+        const PORT = process.env.PORT || 8000;
         app.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ SUCCESS: Listening on port ${PORT}`);
             console.log(`📍 Root Path: ${ROOT_DIR}`);
