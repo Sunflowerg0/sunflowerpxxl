@@ -3465,32 +3465,38 @@ async function populateInitialData() {
 // ----------------------------------------------------------------------------------
 // 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
 // ----------------------------------------------------------------------------------
-
-// 2. Serve Static Assets FIRST
-// This ensures that when index.html asks for CSS/JS, the server knows where they are
-app.use(express.static(path.join(ROOT_DIR))); 
+// Serve static files from the root and specific directories
+app.use(express.static(ROOT_DIR)); 
 app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
 app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
-// --- THE "BULLETPROOF" ROOT ROUTE ---
-app.get('/', (req, res) => {
-    // path.resolve ensures we get a fixed absolute path from the root
-    const indexPath = path.resolve(ROOT_DIR, 'index.html');
+app.use('/uploads', express.static(path.join(ROOT_DIR, 'uploads')));
 
+// --- 2. THE "BULLETPROOF" ROUTING ---
+
+// Diagnostic route - always keep this at the top for testing
+app.get('/debug-path', (req, res) => {
+    res.json({
+        root: ROOT_DIR,
+        cwd: process.cwd(),
+        indexExists: fs.existsSync(path.join(ROOT_DIR, 'index.html'))
+    });
+});
+
+// Primary Root Route
+app.get('/', (req, res) => {
+    const indexPath = path.resolve(ROOT_DIR, 'index.html');
     if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        // Fallback: If root index isn't found, check if it's in a subdirectory
-        const altPath = path.resolve(ROOT_DIR, 'client', 'index.html');
-        if (fs.existsSync(altPath)) {
-            res.sendFile(altPath);
-        } else {
-            // This is the "Nuclear Option" for debugging
-            const files = fs.readdirSync(ROOT_DIR);
-            res.status(404).send(`Server Error: index.html not found. Files in root: ${files.join(', ')}`);
-        }
+        res.status(404).send("Sunflower: System entry point (index.html) missing in root.");
     }
 });
 
+// --- 3. THE CATCH-ALL (Fixes 404 on refresh) ---
+// This MUST be the last route before startServer()
+app.get('*', (req, res) => {
+    res.sendFile(path.resolve(ROOT_DIR, 'index.html'));
+});
 // --- 4. START SERVER FUNCTION ---
 async function startServer() {
     try {
