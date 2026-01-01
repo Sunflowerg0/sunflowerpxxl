@@ -13,8 +13,6 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 
-const ROOT_DIR = process.cwd(); 
-
 // 1. CORS
 app.use(cors());
 app.use(express.json());
@@ -3473,24 +3471,23 @@ async function populateInitialData() {
 app.use(express.static(path.join(ROOT_DIR))); 
 app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
 app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
-
-// 3. The "Perfect" Root Route
+// --- THE "BULLETPROOF" ROOT ROUTE ---
 app.get('/', (req, res) => {
-    // Check main root first, then check client folder
-    const mainIndex = path.join(ROOT_DIR, 'index.html');
-    const clientIndex = path.join(ROOT_DIR, 'client', 'index.html');
+    // path.resolve ensures we get a fixed absolute path from the root
+    const indexPath = path.resolve(ROOT_DIR, 'index.html');
 
-    if (fs.existsSync(mainIndex)) {
-        return res.sendFile(mainIndex);
-    } else if (fs.existsSync(clientIndex)) {
-        return res.sendFile(clientIndex);
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
     } else {
-        // Diagnostic error message to help you see what the server sees
-        res.status(404).send(`
-            <h2>404: Sunflower System Error</h2>
-            <p>File not found at: ${mainIndex}</p>
-            <p>Available files in root: ${fs.readdirSync(ROOT_DIR).join(', ')}</p>
-        `);
+        // Fallback: If root index isn't found, check if it's in a subdirectory
+        const altPath = path.resolve(ROOT_DIR, 'client', 'index.html');
+        if (fs.existsSync(altPath)) {
+            res.sendFile(altPath);
+        } else {
+            // This is the "Nuclear Option" for debugging
+            const files = fs.readdirSync(ROOT_DIR);
+            res.status(404).send(`Server Error: index.html not found. Files in root: ${files.join(', ')}`);
+        }
     }
 });
 
