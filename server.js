@@ -12,6 +12,9 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer'); 
 
 const app = express();
+
+const ROOT_DIR = process.cwd(); 
+
 // 1. CORS
 app.use(cors());
 app.use(express.json());
@@ -3465,35 +3468,29 @@ async function populateInitialData() {
 // 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
 // ----------------------------------------------------------------------------------
 
-app.use(express.static(path.join(process.cwd(), 'client')));
-app.use('/admin', express.static(path.join(process.cwd(), 'admin')));
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// 2. Serve Static Assets FIRST
+// This ensures that when index.html asks for CSS/JS, the server knows where they are
+app.use(express.static(path.join(ROOT_DIR))); 
+app.use('/client', express.static(path.join(ROOT_DIR, 'client')));
+app.use('/admin', express.static(path.join(ROOT_DIR, 'admin')));
 
-// --- 2. DIAGNOSTICS ROUTE ---
-app.get('/debug-path', (req, res) => {
-    const indexPath = path.join(process.cwd(), 'index.html');
-    res.json({
-        cwd: process.cwd(),
-        dirname: __dirname,
-        expectedIndex: indexPath,
-        indexExists: fs.existsSync(indexPath),
-        envLoaded: !!process.env.MONGODB_URI
-    });
-});
-
-// --- 3. THE PERFECT APP.GET ('/') ---
+// 3. The "Perfect" Root Route
 app.get('/', (req, res) => {
-    const indexPath = path.join(process.cwd(), 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+    // Check main root first, then check client folder
+    const mainIndex = path.join(ROOT_DIR, 'index.html');
+    const clientIndex = path.join(ROOT_DIR, 'client', 'index.html');
+
+    if (fs.existsSync(mainIndex)) {
+        return res.sendFile(mainIndex);
+    } else if (fs.existsSync(clientIndex)) {
+        return res.sendFile(clientIndex);
     } else {
-        // Fallback for subfolder structure if index.html is inside /client
-        const clientIndexPath = path.join(process.cwd(), 'client', 'index.html');
-        if (fs.existsSync(clientIndexPath)) {
-            res.sendFile(clientIndexPath);
-        } else {
-            res.status(404).send("Sunflower PXXL: Source files not found on server.");
-        }
+        // Diagnostic error message to help you see what the server sees
+        res.status(404).send(`
+            <h2>404: Sunflower System Error</h2>
+            <p>File not found at: ${mainIndex}</p>
+            <p>Available files in root: ${fs.readdirSync(ROOT_DIR).join(', ')}</p>
+        `);
     }
 });
 
