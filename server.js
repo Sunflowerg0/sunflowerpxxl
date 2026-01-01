@@ -12,7 +12,8 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer'); 
 
 const app = express();
-// NEW: Use express.json() middleware for parsing JSON bodies in API requests
+// 1. CORS
+app.use(cors());
 app.use(express.json());
 
 // --- MONGODB CONNECTION SETUP ---
@@ -379,8 +380,6 @@ const getRandomDate = (start, end) => {
     
     return new Date(randomTime);
 };
-// 1. CORS
-app.use(cors());
 
 
 // Configure Multer for file uploads
@@ -3465,65 +3464,62 @@ async function populateInitialData() {
 // ----------------------------------------------------------------------------------
 // 🚀 1. IMMEDIATE DIAGNOSTICS (Must be above all other routes)
 // ----------------------------------------------------------------------------------
+
+app.use(express.static(path.join(process.cwd(), 'client')));
+app.use('/admin', express.static(path.join(process.cwd(), 'admin')));
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+
+// --- 2. DIAGNOSTICS ROUTE ---
 app.get('/debug-path', (req, res) => {
-    const fs = require('fs');
-    const fullPath = path.resolve(__dirname, 'index.html');
-    const exists = fs.existsSync(fullPath);
+    const indexPath = path.join(process.cwd(), 'index.html');
     res.json({
-        searchingIn: __dirname,
-        expectedFile: fullPath,
-        fileExistsOnServer: exists
+        cwd: process.cwd(),
+        dirname: __dirname,
+        expectedIndex: indexPath,
+        indexExists: fs.existsSync(indexPath),
+        envLoaded: !!process.env.MONGODB_URI
     });
 });
 
-const root = path.resolve(__dirname);
-
+// --- 3. THE PERFECT APP.GET ('/') ---
 app.get('/', (req, res) => {
-    // We try two common pathing methods for Cloud Hosting
-    const pathsToTry = [
-        path.join(process.cwd(), 'index.html'),
-        path.join(__dirname, 'index.html'),
-        path.resolve(__dirname, 'index.html')
-    ];
-
-    let fileSent = false;
-
-    for (const p of pathsToTry) {
-        if (fs.existsSync(p)) {
-            console.log("✅ Found index.html at:", p);
-            res.sendFile(p);
-            fileSent = true;
-            break;
+    const indexPath = path.join(process.cwd(), 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+    } else {
+        // Fallback for subfolder structure if index.html is inside /client
+        const clientIndexPath = path.join(process.cwd(), 'client', 'index.html');
+        if (fs.existsSync(clientIndexPath)) {
+            res.sendFile(clientIndexPath);
+        } else {
+            res.status(404).send("Sunflower PXXL: Source files not found on server.");
         }
-    }
-
-    if (!fileSent) {
-        console.error("❌ index.html not found in any expected location.");
-        res.status(404).send("Server Error: HTML Source Missing");
     }
 });
 
-// 2. Serve Static Assets (Only after checking the root)
-app.use(express.static(path.join(__dirname, 'client'))); 
-app.use('/admin', express.static(path.join(__dirname, 'admin')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+// --- 4. START SERVER FUNCTION ---
 async function startServer() {
     try {
-        console.log("⏳ Attempting to connect to MongoDB...");
+        console.log("⏳ Connecting to Database...");
         
-        // Use the URI from your .env
-        await mongoose.connect(process.env.MONGODB_URI);
-        
-        console.log("✅ MongoDB Connected Successfully!");
+        // Ensure MONGODB_URI exists
+        if (!process.env.MONGODB_URI) {
+            throw new Error("MONGODB_URI is missing from environment variables.");
+        }
 
-        app.listen(PORT, () => {
-            console.log(`--- Sunflower PXXL Server ---`);
-            console.log(`🚀 Running on port: ${PORT}`);
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log("✅ MongoDB Connected!");
+
+        app.listen(PORT, '0.0.0.0', () => {
+            console.log(`
+---------------------------------------
+🚀 SERVER LIVE: http://localhost:${PORT}
+📂 ROOT DIR: ${process.cwd()}
+---------------------------------------
+            `);
         });
     } catch (error) {
-        console.error('❌ FATAL ERROR: Database connection failed.');
-        console.error(error.message);
+        console.error('❌ FATAL ERROR:', error.message);
         process.exit(1);
     }
 }
