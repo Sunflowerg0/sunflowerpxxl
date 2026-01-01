@@ -1,0 +1,16 @@
+[build]
+  publish = "." # The root where index.html, /client, and /admin are
+  functions = "netlify/functions"
+
+[[redirects]]
+  # Route any frontend calls to /api/* to your function
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  # Bulletproof SPA routing: 
+  # If a file doesn't exist, serve index.html (fixes refresh 404s)
+  from = "/*"
+  to = "/index.html"
+  status = 200
